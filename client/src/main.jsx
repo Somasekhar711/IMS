@@ -1,15 +1,14 @@
 import { StrictMode, useState } from 'react';
-import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, Package, UserRound } from 'lucide-react';
+import { LockKeyhole, Package } from 'lucide-react';
 import { createRoot } from 'react-dom/client';
+import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
 import './styles.css';
 
 function App() {
   const [isRegistering, setIsRegistering] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-
   const switchMode = (registering) => {
     setIsRegistering(registering);
-    setShowPassword(false);
   };
 
   return (
@@ -51,19 +50,7 @@ function App() {
             <button className={isRegistering ? 'is-active' : ''} onClick={() => switchMode(true)} role="tab" aria-selected={isRegistering}>Create account</button>
           </div>
 
-          <div className="form-heading">
-            <p className="eyebrow">{isRegistering ? 'Start in minutes' : 'Welcome back'}</p>
-            <h2>{isRegistering ? 'Set up your workspace.' : 'Good to see you again.'}</h2>
-            <p>{isRegistering ? 'Create an account to bring your inventory into focus.' : 'Sign in to pick up where your inventory left off.'}</p>
-          </div>
-
-          <form onSubmit={(event) => event.preventDefault()}>
-            {isRegistering && <label className="field"><span>Full name</span><div className="input-wrap"><UserRound size={18} /><input type="text" placeholder="Alex Morgan" autoComplete="name" /></div></label>}
-            <label className="field"><span>Work email</span><div className="input-wrap"><Mail size={18} /><input type="email" placeholder="you@company.com" autoComplete="email" /></div></label>
-            <label className="field"><span>Password</span><div className="input-wrap"><LockKeyhole size={18} /><input type={showPassword ? 'text' : 'password'} placeholder="••••••••" autoComplete={isRegistering ? 'new-password' : 'current-password'} /><button className="input-action" type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></label>
-            {isRegistering ? <label className="terms"><input type="checkbox" /><span>I agree to the <a href="#terms">terms of service</a> and <a href="#privacy">privacy policy</a>.</span></label> : <div className="form-options"><label className="remember"><input type="checkbox" /> <span>Remember me</span></label><a href="#forgot">Forgot password?</a></div>}
-            <button className="submit-button" type="submit">{isRegistering ? 'Create workspace' : 'Enter workspace'} <ArrowRight size={18} /></button>
-          </form>
+          {isRegistering ? <RegisterPage /> : <LoginPage />}
 
           <p className="mode-prompt">{isRegistering ? 'Already have an account?' : 'New to Stockroom?'} <button onClick={() => switchMode(!isRegistering)}>{isRegistering ? 'Sign in' : 'Create an account'}</button></p>
           <p className="security-note"><LockKeyhole size={14} /> Your data is encrypted and private.</p>

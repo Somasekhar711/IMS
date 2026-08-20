@@ -41,7 +41,7 @@ export function RegisterPage() {
         <div className="password-rules" aria-live="polite">
           {passwordRules.map((rule) => {
             const isValid = rule.test(password);
-            return <span className={isValid ? 'is-valid' : ''} key={rule.label}>{isValid ? <Check size={13} /> : <X size={13} />}{rule.label}</span>;
+            return <span className={isValid ? 'is-valid' : 'is-invalid'} key={rule.label}>{isValid ? <Check size={13} /> : <X size={13} />}{rule.label}</span>;
           })}
         </div>
         <label className="field">

@@ -13,10 +13,10 @@ function App() {
 
   return (
     <main className="auth-page">
-      <section className="brand-panel" aria-label="Stockroom overview">
+      <section className="brand-panel" aria-label="StockIt overview">
         <div className="brand-panel__topline">
           <div className="brand-mark" aria-hidden="true"><Package size={19} strokeWidth={2.4} /></div>
-          <span>stockroom</span>
+          <span>StockIt</span>
         </div>
 
         <div className="brand-panel__content">
@@ -44,7 +44,7 @@ function App() {
 
       <section className="form-panel">
         <div className="form-panel__inner">
-          <div className="mobile-brand"><div className="brand-mark"><Package size={18} /></div><span>stockroom</span></div>
+          <div className="mobile-brand"><div className="brand-mark"><Package size={18} /></div><span>StockIt</span></div>
           <div className="mode-switch" role="tablist" aria-label="Authentication mode">
             <button className={!isRegistering ? 'is-active' : ''} onClick={() => switchMode(false)} role="tab" aria-selected={!isRegistering}>Sign in</button>
             <button className={isRegistering ? 'is-active' : ''} onClick={() => switchMode(true)} role="tab" aria-selected={isRegistering}>Create account</button>
@@ -52,7 +52,7 @@ function App() {
 
           {isRegistering ? <RegisterPage /> : <LoginPage />}
 
-          <p className="mode-prompt">{isRegistering ? 'Already have an account?' : 'New to Stockroom?'} <button onClick={() => switchMode(!isRegistering)}>{isRegistering ? 'Sign in' : 'Create an account'}</button></p>
+          <p className="mode-prompt">{isRegistering ? 'Already have an account?' : 'New to StockIt?'} <button onClick={() => switchMode(!isRegistering)}>{isRegistering ? 'Sign in' : 'Create an account'}</button></p>
           <p className="security-note"><LockKeyhole size={14} /> Your data is encrypted and private.</p>
         </div>
       </section>

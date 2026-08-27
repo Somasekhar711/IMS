@@ -6,6 +6,8 @@ StockIt is an inventory management system being built with the PERN stack:
 - Express and Node.js for the API
 - React and Vite for the client
 
+For the latest implementation notes and collaborator handoff, see [COLLABORATOR_CONTEXT.md](.github/COLLABORATOR_CONTEXT.md).
+
 ## Current Status
 
 The client currently includes the authentication UI:

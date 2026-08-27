@@ -19,6 +19,7 @@ import {
   UsersRound,
   X,
 } from 'lucide-react';
+import { ProductPage } from './ProductPage';
 
 const navigation = [
   { label: 'Dashboard', icon: LayoutDashboard },
@@ -79,7 +80,7 @@ function DashboardPage() {
           <div className="header-actions"><button className="search-button" aria-label="Search inventory"><Search size={18} /></button><button className="notification-button" aria-label="View notifications"><Bell size={18} /><i /></button><div className="header-user"><div className="avatar">AM</div><span>Admin</span></div></div>
         </header>
 
-        <div className="dashboard-main">
+        {selectedModule === 'Products' ? <ProductPage /> : <div className="dashboard-main">
           <div className="dashboard-intro"><div><p className="eyebrow">Thursday, 27 August 2026</p><h1>Good morning, Alex.</h1><p>Here is what is happening across your inventory today.</p></div><button className="date-filter">Last 30 days <span>⌄</span></button></div>
 
           <div className="summary-grid">
@@ -90,7 +91,7 @@ function DashboardPage() {
             <section className="panel pulse-panel"><div className="panel-heading"><div><p className="eyebrow">Live overview</p><h2>Warehouse pulse</h2></div><span className="status-pill"><i /> Live</span></div><div className="pulse-chart"><div className="chart-labels"><span>100k</span><span>75k</span><span>50k</span><span>25k</span><span>0</span></div><div className="chart-area"><div className="chart-grid"><i /><i /><i /><i /></div><svg viewBox="0 0 600 170" preserveAspectRatio="none" aria-label="Stock units chart"><defs><linearGradient id="pulseFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#b9e36b" stopOpacity=".28" /><stop offset="100%" stopColor="#b9e36b" stopOpacity="0" /></linearGradient></defs><path d="M0 145 C45 128, 70 137, 108 105 S176 118, 218 82 S278 96, 316 63 S375 80, 420 45 S475 78, 518 40 S565 50, 600 18 V170 H0 Z" fill="url(#pulseFill)" /><path d="M0 145 C45 128, 70 137, 108 105 S176 118, 218 82 S278 96, 316 63 S375 80, 420 45 S475 78, 518 40 S565 50, 600 18" fill="none" stroke="#b9e36b" strokeWidth="3" vectorEffect="non-scaling-stroke" /></svg><div className="chart-months"><span>Aug 01</span><span>Aug 08</span><span>Aug 15</span><span>Aug 22</span><span>Aug 27</span></div></div></div><div className="pulse-legend"><span><i className="dot-green" /> Available stock <strong>86,320</strong></span><span><i className="dot-orange" /> Reserved <strong>4,280</strong></span></div></section>
             <section className="panel activity-panel"><div className="panel-heading"><div><p className="eyebrow">Recent updates</p><h2>Activity</h2></div><button className="text-button" onClick={() => openModule('Stock Movements')}>View all</button></div><div className="activity-list">{activity.map(({ title, detail, time, type }) => <button className="activity-item" key={title} onClick={() => openModule(type === 'purchase' ? 'Purchase Orders' : type === 'sale' ? 'Sales' : type === 'product' ? 'Products' : 'Inventory')}><span className={`activity-icon ${type}`}>{type === 'purchase' ? <Truck size={15} /> : type === 'sale' ? <DollarSign size={15} /> : type === 'product' ? <Package size={15} /> : <AlertTriangle size={15} />}</span><span className="activity-copy"><strong>{title}</strong><small>{detail}</small></span><time>{time}</time></button>)}</div></section>
           </div>
-        </div>
+        </div>}
       </section>
     </main>
   );

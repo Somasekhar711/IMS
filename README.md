@@ -16,7 +16,14 @@ The client currently includes the authentication UI:
 - Password requirements for minimum length, uppercase letter, number, and special character
 - Responsive StockIt branding
 
-Authentication is currently UI-only. The Express API and PostgreSQL integration will be added next.
+The client also includes the first dashboard modules:
+
+- Dashboard summary cards with inventory and sales information
+- Responsive hamburger navigation for inventory modules
+- Warehouse pulse chart and recent activity panel
+- Products page with add, search, stock threshold, and delete interactions
+
+Authentication and product data are currently UI-only and stored in client state. The Express API and PostgreSQL integration will be added next.
 
 ## Project Structure
 
@@ -26,7 +33,9 @@ IMS/
 │   ├── src/
 │   │   ├── pages/
 │   │   │   ├── LoginPage.jsx
-│   │   │   └── RegisterPage.jsx
+│   │   │   ├── RegisterPage.jsx
+│   │   │   ├── DashboardPage.jsx
+│   │   │   └── ProductPage.jsx
 │   │   ├── main.jsx
 │   │   └── styles.css
 │   ├── index.html

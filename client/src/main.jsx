@@ -3,13 +3,19 @@ import { LockKeyhole, Package } from 'lucide-react';
 import { createRoot } from 'react-dom/client';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { DashboardPage } from './pages/DashboardPage';
 import './styles.css';
 
 function App() {
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const switchMode = (registering) => {
     setIsRegistering(registering);
   };
+
+  if (isLoggedIn) {
+    return <DashboardPage />;
+  }
 
   return (
     <main className="auth-page">
@@ -50,7 +56,7 @@ function App() {
             <button className={isRegistering ? 'is-active' : ''} onClick={() => switchMode(true)} role="tab" aria-selected={isRegistering}>Create account</button>
           </div>
 
-          {isRegistering ? <RegisterPage /> : <LoginPage />}
+          {isRegistering ? <RegisterPage /> : <LoginPage onLogin={() => setIsLoggedIn(true)} />}
 
           <p className="mode-prompt">{isRegistering ? 'Already have an account?' : 'New to StockIt?'} <button onClick={() => switchMode(!isRegistering)}>{isRegistering ? 'Sign in' : 'Create an account'}</button></p>
           <p className="security-note"><LockKeyhole size={14} /> Your data is encrypted and private.</p>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
 
-export function LoginPage() {
+export function LoginPage({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
@@ -12,7 +12,7 @@ export function LoginPage() {
         <p>Sign in to pick up where your inventory left off.</p>
       </div>
 
-      <form onSubmit={(event) => event.preventDefault()}>
+      <form onSubmit={(event) => { event.preventDefault(); onLogin(); }}>
         <label className="field">
           <span>Work email</span>
           <div className="input-wrap"><Mail size={18} /><input type="email" placeholder="you@company.com" autoComplete="email" /></div>

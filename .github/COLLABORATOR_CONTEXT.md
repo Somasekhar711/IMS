@@ -14,7 +14,9 @@ The repository is hosted at https://github.com/Somasekhar711/IMS.
 
 ## Current Repository State
 
-The frontend is implemented in `client/`. The `server/` directory is reserved for the backend and currently contains only a placeholder file.
+The frontend is implemented in `client/`. The `server/` directory is reserved for the backend and currently contains the first database migration plus a placeholder file.
+
+The initial database migration is available at `server/db/001_initial_schema.sql`. It creates only `users`, `categories`, and `products`; it has not been connected to the API yet.
 
 The current frontend is a UI prototype. Authentication and product data are not connected to an API or database yet. Product data is held in React component state and is lost when the page is refreshed.
 
@@ -80,6 +82,8 @@ IMS/
 │   ├── index.html
 │   └── package.json
 ├── server/
+│   └── db/
+│       └── 001_initial_schema.sql
 └── README.md
 ```
 
@@ -118,4 +122,5 @@ The default development URL is `http://localhost:5173/`.
 3. Create authentication endpoints and persist users securely.
 4. Connect login and registration forms to the API.
 5. Add product endpoints and replace ProductPage local state with API data.
-6. Implement the remaining dashboard modules.
+6. Add new numbered migrations for inventory movements, suppliers, purchases, and sales as those modules are implemented.
+7. Implement the remaining dashboard modules.

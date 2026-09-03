@@ -43,6 +43,8 @@ IMS/
 │   ├── index.html
 │   └── package.json
 └── server/
+	└── db/
+		└── 001_initial_schema.sql
 ```
 
 ## Run the Client
@@ -62,6 +64,31 @@ To create a production build:
 ```bash
 npm run build
 ```
+
+## Database Setup
+
+PostgreSQL is used for the StockIt database. The first migration is in [server/db/001_initial_schema.sql](server/db/001_initial_schema.sql).
+
+The initial schema contains only the tables needed for the current features:
+
+- `users`: account details, password hashes, and roles
+- `categories`: product categories
+- `products`: catalog, pricing, tax, expiry, and stock information
+
+### Create the Database
+
+Create a database named `stockit` using pgAdmin or SQL Shell. Then open `server/db/001_initial_schema.sql` in pgAdmin's Query Tool and execute it while connected to `stockit`.
+
+If the PostgreSQL command-line client is installed, the equivalent commands are:
+
+```bash
+createdb -U postgres stockit
+psql -U postgres -d stockit -f server/db/001_initial_schema.sql
+```
+
+Do not store plain-text passwords in `users.password_hash`; the backend will hash passwords before inserting them.
+
+Future schema changes should be added as new numbered migrations, such as `002_inventory_movements.sql`, rather than editing or replacing an already-run migration.
 
 ## Repository
 

@@ -26,6 +26,7 @@ The client also includes the first dashboard modules:
 - Separate Products list and Add Product screens
 - Product create, read, update, and delete interactions
 - Product search and stock threshold highlighting
+- Inventory page with stock summaries, filters, status indicators, and stock adjustments
 
 Authentication and product data are currently UI-only and stored in client state. The Express API and PostgreSQL integration will be added next.
 

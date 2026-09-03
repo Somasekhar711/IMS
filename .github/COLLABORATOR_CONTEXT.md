@@ -56,6 +56,16 @@ The current frontend is a UI prototype. Authentication and product data are not 
 - Edit and delete product interactions
 - Dashboard state keeps products available while switching between the list and add screens
 
+### Inventory
+
+- Inventory UI in `client/src/pages/InventoryPage.jsx`
+- Stock summary counts for total, healthy, low, and out-of-stock items
+- Search and status filters
+- Stock status indicators based on `stock_present` and `threshold_stock`
+- Add-stock and remove-stock adjustment modal
+- Stock adjustments update the shared client state and `stock_updated_date`
+- Stock movement history is not persisted yet; it will require the planned `inventory_movements` table
+
 ## Important Client Flow
 
 `client/src/main.jsx` currently controls the top-level UI state:
@@ -79,6 +89,7 @@ IMS/
 │   │   ├── pages/
 │   │   │   ├── DashboardPage.jsx
 │   │   │   ├── AddProductPage.jsx
+│   │   │   ├── InventoryPage.jsx
 │   │   │   ├── LoginPage.jsx
 │   │   │   ├── ProductsListPage.jsx
 │   │   │   ├── productFields.js

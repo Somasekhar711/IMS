@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { AddProductPage } from './AddProductPage';
 import { ProductsListPage } from './ProductsListPage';
+import { InventoryPage } from './InventoryPage';
 
 const navigation = [
   { label: 'Dashboard', icon: LayoutDashboard },
@@ -79,6 +80,10 @@ function DashboardPage() {
     setProducts((current) => current.filter((product) => product.id !== id));
   };
 
+  const adjustStock = (id, stockPresent) => {
+    setProducts((current) => current.map((product) => product.id === id ? { ...product, stockPresent: String(stockPresent), stockUpdatedDate: new Date().toISOString().slice(0, 10) } : product));
+  };
+
   return (
     <main className="dashboard-page">
       {isMenuOpen && <button className="drawer-backdrop" onClick={() => setIsMenuOpen(false)} aria-label="Close navigation" />}
@@ -97,7 +102,7 @@ function DashboardPage() {
           <div className="header-actions"><button className="search-button" aria-label="Search inventory"><Search size={18} /></button><button className="notification-button" aria-label="View notifications"><Bell size={18} /><i /></button><div className="header-user"><div className="avatar">AM</div><span>Admin</span></div></div>
         </header>
 
-        {selectedModule === 'Products' ? <ProductsListPage products={products} onUpdateProduct={updateProduct} onDeleteProduct={deleteProduct} onAddProduct={() => openModule('Add Product')} /> : selectedModule === 'Add Product' ? <AddProductPage onAddProduct={addProduct} onBack={() => openModule('Products')} /> : <div className="dashboard-main">
+        {selectedModule === 'Products' ? <ProductsListPage products={products} onUpdateProduct={updateProduct} onDeleteProduct={deleteProduct} onAddProduct={() => openModule('Add Product')} /> : selectedModule === 'Add Product' ? <AddProductPage onAddProduct={addProduct} onBack={() => openModule('Products')} /> : selectedModule === 'Inventory' ? <InventoryPage products={products} onAdjustStock={adjustStock} /> : <div className="dashboard-main">
           <div className="dashboard-intro"><div><p className="eyebrow">Thursday, 27 August 2026</p><h1>Good morning, Alex.</h1><p>Here is what is happening across your inventory today.</p></div><button className="date-filter">Last 30 days <span>⌄</span></button></div>
 
           <div className="summary-grid">

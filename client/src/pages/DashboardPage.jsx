@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   AlertTriangle,
   BarChart3,
@@ -23,6 +23,7 @@ import {
 import { AddProductPage } from './AddProductPage';
 import { ProductsListPage } from './ProductsListPage';
 import { InventoryPage } from './InventoryPage';
+import { adjustProductStock, createProduct, deleteProduct as deleteProductRequest, getProducts, updateProduct as updateProductRequest } from '../api';
 
 const navigation = [
   { label: 'Dashboard', icon: LayoutDashboard },
@@ -61,27 +62,36 @@ function DashboardPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedModule, setSelectedModule] = useState('Dashboard');
   const [products, setProducts] = useState([]);
+  const [productError, setProductError] = useState('');
+
+  useEffect(() => {
+    getProducts().then(setProducts).catch((error) => setProductError(error.message || 'Unable to load products'));
+  }, []);
 
   const openModule = (module) => {
     setSelectedModule(module);
     setIsMenuOpen(false);
   };
 
-  const addProduct = (product) => {
-    setProducts((current) => [{ ...product, id: crypto.randomUUID() }, ...current]);
+  const addProduct = async (product) => {
+    const createdProduct = await createProduct(product);
+    setProducts((current) => [createdProduct, ...current]);
     setSelectedModule('Products');
   };
 
-  const updateProduct = (updatedProduct) => {
-    setProducts((current) => current.map((product) => product.id === updatedProduct.id ? updatedProduct : product));
+  const updateProduct = async (updatedProduct) => {
+    const savedProduct = await updateProductRequest(updatedProduct.id, updatedProduct);
+    setProducts((current) => current.map((product) => product.id === savedProduct.id ? savedProduct : product));
   };
 
-  const deleteProduct = (id) => {
+  const deleteProduct = async (id) => {
+    await deleteProductRequest(id);
     setProducts((current) => current.filter((product) => product.id !== id));
   };
 
-  const adjustStock = (id, stockPresent) => {
-    setProducts((current) => current.map((product) => product.id === id ? { ...product, stockPresent: String(stockPresent), stockUpdatedDate: new Date().toISOString().slice(0, 10) } : product));
+  const adjustStock = async (id, stockPresent) => {
+    const updatedStock = await adjustProductStock(id, stockPresent);
+    setProducts((current) => current.map((product) => product.id === updatedStock.id ? { ...product, ...updatedStock } : product));
   };
 
   return (
@@ -103,6 +113,7 @@ function DashboardPage() {
           <div className="header-actions"><button className="search-button" aria-label="Search inventory"><Search size={18} /></button><button className="notification-button" aria-label="View notifications"><Bell size={18} /><i /></button><div className="header-user"><div className="avatar">AM</div><span>Admin</span></div></div>
         </header>
 
+  {productError && <div className="dashboard-error">{productError}</div>}
   {selectedModule === 'Products' ? <ProductsListPage products={products} onUpdateProduct={updateProduct} onDeleteProduct={deleteProduct} onAddProduct={() => openModule('Add Product')} /> : selectedModule === 'Add Product' ? <AddProductPage products={products} onAddProduct={addProduct} onUpdateProduct={updateProduct} onBack={() => openModule('Products')} /> : selectedModule === 'Inventory' ? <InventoryPage products={products} onAdjustStock={adjustStock} /> : <div className="dashboard-main">
           <div className="dashboard-intro"><div><p className="eyebrow">Thursday, 27 August 2026</p><h1>Good morning, Alex.</h1><p>Here is what is happening across your inventory today.</p></div><button className="date-filter">Last 30 days <span>⌄</span></button></div>
 

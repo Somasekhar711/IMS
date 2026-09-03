@@ -47,11 +47,24 @@ The current frontend is a UI prototype. Authentication and product data are not 
 
 ### Products
 
-- Products UI in `client/src/pages/ProductPage.jsx`
+- Products list UI in `client/src/pages/ProductsListPage.jsx`
+- Add-product UI in `client/src/pages/AddProductPage.jsx`
+- Shared product field definitions in `client/src/pages/productFields.js`
 - Add-product form with HSN, name, price, category, GST, discount, dates, stock, and threshold fields
 - Product search by name, HSN, or category
 - Low-stock highlighting based on current stock and threshold
-- Delete product interaction
+- Edit and delete product interactions
+- Dashboard state keeps products available while switching between the list and add screens
+
+### Inventory
+
+- Inventory UI in `client/src/pages/InventoryPage.jsx`
+- Stock summary counts for total, healthy, low, and out-of-stock items
+- Search and status filters
+- Stock status indicators based on `stock_present` and `threshold_stock`
+- Add-stock and remove-stock adjustment modal
+- Stock adjustments update the shared client state and `stock_updated_date`
+- Stock movement history is not persisted yet; it will require the planned `inventory_movements` table
 
 ## Important Client Flow
 
@@ -59,8 +72,9 @@ The current frontend is a UI prototype. Authentication and product data are not 
 
 1. The app starts on the login page.
 2. Submitting the login form opens the dashboard UI locally.
-3. The dashboard navigation can switch to the Products page.
-4. Other dashboard modules currently remain dashboard selections/placeholders until their pages are implemented.
+3. The dashboard navigation can switch to the Products list or Add Product screen.
+4. Product CRUD is currently held in dashboard React state and is not persisted yet.
+5. Other dashboard modules currently remain dashboard selections/placeholders until their pages are implemented.
 
 This is a local prototype transition only. Do not treat it as real authentication.
 
@@ -74,8 +88,11 @@ IMS/
 │   ├── src/
 │   │   ├── pages/
 │   │   │   ├── DashboardPage.jsx
+│   │   │   ├── AddProductPage.jsx
+│   │   │   ├── InventoryPage.jsx
 │   │   │   ├── LoginPage.jsx
-│   │   │   ├── ProductPage.jsx
+│   │   │   ├── ProductsListPage.jsx
+│   │   │   ├── productFields.js
 │   │   │   └── RegisterPage.jsx
 │   │   ├── main.jsx
 │   │   └── styles.css

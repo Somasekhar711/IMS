@@ -12,6 +12,7 @@ import {
   Package,
   PanelLeftClose,
   Search,
+  Plus,
   Settings,
   ShoppingCart,
   Tags,
@@ -19,11 +20,14 @@ import {
   UsersRound,
   X,
 } from 'lucide-react';
-import { ProductPage } from './ProductPage';
+import { AddProductPage } from './AddProductPage';
+import { ProductsListPage } from './ProductsListPage';
+import { InventoryPage } from './InventoryPage';
 
 const navigation = [
   { label: 'Dashboard', icon: LayoutDashboard },
   { label: 'Products', icon: Package },
+  { label: 'Add Product', icon: Plus, separated: false },
   { label: 'Inventory', icon: Boxes },
   { label: 'Categories', icon: Tags },
   { label: 'Suppliers', icon: Truck, separated: true },
@@ -56,10 +60,28 @@ const activity = [
 function DashboardPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedModule, setSelectedModule] = useState('Dashboard');
+  const [products, setProducts] = useState([]);
 
   const openModule = (module) => {
     setSelectedModule(module);
     setIsMenuOpen(false);
+  };
+
+  const addProduct = (product) => {
+    setProducts((current) => [{ ...product, id: crypto.randomUUID() }, ...current]);
+    setSelectedModule('Products');
+  };
+
+  const updateProduct = (updatedProduct) => {
+    setProducts((current) => current.map((product) => product.id === updatedProduct.id ? updatedProduct : product));
+  };
+
+  const deleteProduct = (id) => {
+    setProducts((current) => current.filter((product) => product.id !== id));
+  };
+
+  const adjustStock = (id, stockPresent) => {
+    setProducts((current) => current.map((product) => product.id === id ? { ...product, stockPresent: String(stockPresent), stockUpdatedDate: new Date().toISOString().slice(0, 10) } : product));
   };
 
   return (
@@ -74,13 +96,14 @@ function DashboardPage() {
       </aside>
 
       <section className="dashboard-content">
+        <div className="stock-symbols" aria-hidden="true" />
         <header className="dashboard-header">
           <button className="menu-button" onClick={() => setIsMenuOpen(true)} aria-label="Open navigation"><Menu size={20} /></button>
           <div className="dashboard-title"><span>Inventory Management</span><strong>{selectedModule}</strong></div>
           <div className="header-actions"><button className="search-button" aria-label="Search inventory"><Search size={18} /></button><button className="notification-button" aria-label="View notifications"><Bell size={18} /><i /></button><div className="header-user"><div className="avatar">AM</div><span>Admin</span></div></div>
         </header>
 
-        {selectedModule === 'Products' ? <ProductPage /> : <div className="dashboard-main">
+        {selectedModule === 'Products' ? <ProductsListPage products={products} onUpdateProduct={updateProduct} onDeleteProduct={deleteProduct} onAddProduct={() => openModule('Add Product')} /> : selectedModule === 'Add Product' ? <AddProductPage onAddProduct={addProduct} onBack={() => openModule('Products')} /> : selectedModule === 'Inventory' ? <InventoryPage products={products} onAdjustStock={adjustStock} /> : <div className="dashboard-main">
           <div className="dashboard-intro"><div><p className="eyebrow">Thursday, 27 August 2026</p><h1>Good morning, Alex.</h1><p>Here is what is happening across your inventory today.</p></div><button className="date-filter">Last 30 days <span>⌄</span></button></div>
 
           <div className="summary-grid">

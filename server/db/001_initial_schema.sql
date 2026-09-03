@@ -1,6 +1,4 @@
 -- StockIt initial schema
--- Scope: authentication and product catalog only.
--- Run this migration once against the StockIt database.
 
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

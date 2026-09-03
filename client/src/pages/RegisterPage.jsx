@@ -44,7 +44,7 @@ export function RegisterPage({ onRegister, error }) {
       <form onSubmit={handleSubmit}>
         <label className="field">
           <span>Full name</span>
-          <div className="input-wrap"><UserRound size={18} /><input type="text" value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="Alex Morgan" autoComplete="name" required /></div>
+          <div className="input-wrap"><UserRound size={18} /><input type="text" value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="Your full name" autoComplete="name" required /></div>
         </label>
         <label className="field">
           <span>Work email</span>

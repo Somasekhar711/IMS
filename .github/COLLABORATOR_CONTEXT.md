@@ -40,9 +40,10 @@ The current frontend is a UI prototype. Authentication and product data are not 
 - Dashboard UI in `client/src/pages/DashboardPage.jsx`
 - Responsive sidebar navigation on desktop
 - Hamburger navigation drawer on mobile
-- Summary cards for products, stock, value, low stock, out of stock, purchases, sales, and expiring items
-- Warehouse pulse chart
-- Recent activity panel
+- Summary cards for products, stock, value, low stock, out of stock, and expiring items
+- Dashboard-supported summary cards derive product and stock metrics from the API
+- Warehouse pulse empty state until movement history exists
+- Recent activity empty state until movement and purchase APIs exist
 - Summary cards and activity items select their related module
 
 ### Products
@@ -54,7 +55,7 @@ The current frontend is a UI prototype. Authentication and product data are not 
 - Product search by name, HSN, or category
 - Low-stock highlighting based on current stock and threshold
 - Edit and delete product interactions
-- Dashboard state keeps products available while switching between the list and add screens
+- Dashboard state mirrors product data loaded from the authenticated API while switching between the list and add screens
 
 ### Inventory
 
@@ -63,7 +64,7 @@ The current frontend is a UI prototype. Authentication and product data are not 
 - Search and status filters
 - Stock status indicators based on `stock_present` and `threshold_stock`
 - Add-stock and remove-stock adjustment modal
-- Stock adjustments update the shared client state and `stock_updated_date`
+- Stock adjustments update PostgreSQL through the authenticated API and refresh `stock_updated_date`
 - Stock movement history is not persisted yet; it will require the planned `inventory_movements` table
 
 ## Important Client Flow
@@ -71,10 +72,11 @@ The current frontend is a UI prototype. Authentication and product data are not 
 `client/src/main.jsx` currently controls the top-level UI state:
 
 1. The app starts on the login page.
-2. Submitting the login form opens the dashboard UI locally.
+2. Submitting the login form authenticates against the API and opens the dashboard.
 3. The dashboard navigation can switch to the Products list or Add Product screen.
-4. Product CRUD is currently held in dashboard React state and is not persisted yet.
-5. Other dashboard modules currently remain dashboard selections/placeholders until their pages are implemented.
+4. Product CRUD and inventory updates are persisted through the authenticated API and PostgreSQL.
+5. Dashboard identity comes from the authenticated user response; no default user is used.
+6. Other dashboard modules currently remain dashboard selections/placeholders until their pages are implemented.
 
 This is a local prototype transition only. Do not treat it as real authentication.
 

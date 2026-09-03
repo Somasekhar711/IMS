@@ -28,7 +28,7 @@ The client also includes the first dashboard modules:
 - Product search and stock threshold highlighting
 - Inventory page with stock summaries, filters, status indicators, and stock adjustments
 
-Authentication and product data are currently UI-only and stored in client state. The Express API and PostgreSQL integration will be added next.
+Authentication, products, and stock adjustments are connected to the Express API and PostgreSQL. Purchase, sales, and stock movement history modules are still pending backend implementation.
 
 ## Project Structure
 

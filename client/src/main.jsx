@@ -10,6 +10,13 @@ import './styles.css';
 function App() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('stockit_token'));
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('stockit_user') || 'null');
+    } catch {
+      return null;
+    }
+  });
   const [authError, setAuthError] = useState('');
 
   const switchMode = (registering) => {
@@ -21,6 +28,8 @@ function App() {
     try {
       const user = await login(email, password);
       localStorage.setItem('stockit_token', user.token);
+      localStorage.setItem('stockit_user', JSON.stringify(user));
+      setCurrentUser(user);
       setIsLoggedIn(true);
       setAuthError('');
     } catch (error) {
@@ -32,6 +41,8 @@ function App() {
     try {
       const user = await register(fullName, email, password);
       localStorage.setItem('stockit_token', user.token);
+      localStorage.setItem('stockit_user', JSON.stringify(user));
+      setCurrentUser(user);
       setIsLoggedIn(true);
       setAuthError('');
     } catch (error) {
@@ -40,7 +51,7 @@ function App() {
   };
 
   if (isLoggedIn) {
-    return <DashboardPage />;
+    return <DashboardPage user={currentUser} />;
   }
 
   return (

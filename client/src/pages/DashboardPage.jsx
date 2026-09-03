@@ -96,7 +96,7 @@ function DashboardPage() {
       </aside>
 
       <section className="dashboard-content">
-        <div className="stock-symbols" aria-hidden="true"><span>📦</span><span>🏷</span><span>📊</span><span>📋</span><span>🚚</span><span>🛒</span><span>₹</span><span>✓</span><span>↗</span><span>🔢</span><span>📦</span><span>🏷</span><span>✓</span><span>📊</span><span>₹</span><span>🚚</span></div>
+        <div className="stock-symbols" aria-hidden="true"><span>📦</span><span>🏷</span><span>▦</span><span>📊</span><span>📋</span><span>🚚</span><span>₹</span><span>✓</span><span>↗</span><span>🔢</span><span>📦</span><span>🏷</span><span>▥</span><span>✓</span><span>📊</span><span>₹</span><span>🚚</span><span>◈</span><span>📦</span><span>🛒</span><span>↗</span><span>📋</span><span>₹</span><span>▦</span><span>🏷</span><span>✓</span><span>📊</span><span>🚚</span><span>🔢</span><span>📦</span><span>▥</span><span>₹</span><span>🏷</span><span>↗</span><span>📋</span><span>✓</span><span>📦</span><span>📊</span><span>🛒</span><span>◈</span><span>₹</span><span>🚚</span><span>▦</span><span>🏷</span><span>✓</span><span>📦</span><span>🔢</span><span>📋</span><span>↗</span></div>
         <header className="dashboard-header">
           <button className="menu-button" onClick={() => setIsMenuOpen(true)} aria-label="Open navigation"><Menu size={20} /></button>
           <div className="dashboard-title"><span>Inventory Management</span><strong>{selectedModule}</strong></div>

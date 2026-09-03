@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" fill="none">
+  <rect width="320" height="320" fill="#f5f6f0"/>
+  <g stroke="#173f38" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".28">
+    <path d="M22 24h25v22H22zM22 24l12 7 13-7M34 31v15"/>
+    <path d="M91 17l22 4-4 22-22-4zM93 24l14 3M96 32l10 2"/>
+    <path d="M159 18v28M149 23l10-5 10 5M149 40l10 6 10-6"/>
+    <path d="M230 18h28v21h-28zM230 18l14 8 14-8M244 26v13"/>
+    <path d="M292 25l13 13M305 25l-13 13M298 20v23M287 31h22"/>
+    <path d="M53 79h31v23H53zM53 79l15 8 16-8M68 87v15"/>
+    <path d="M126 73h25v28h-25zM131 80h15M131 87h15M131 94h9"/>
+    <path d="M194 76l17-7 17 7v21h-34zM194 76l17 8 17-8M211 84v13"/>
+    <path d="M274 73c0 11-18 11-18 0 0-6 9-10 9-10s9 4 9 10zM265 63v20M260 72h10"/>
+    <path d="M20 139h28v20H20zM27 139v-7h14v7M26 148h16"/>
+    <path d="M91 132l30 5-4 25-30-5zM99 138l13 2M97 146l16 3"/>
+    <path d="M164 132h29v25h-29zM169 151l6-8 5 4 7-11"/>
+    <path d="M240 134h26v24h-26zM247 142h12M247 149h9"/>
+    <path d="M298 130v29M288 140h20M288 151h20M293 130v29"/>
+    <path d="M36 203c0-12 19-12 19 0 0 7-9 11-9 11s-10-4-10-11zM46 192v22M41 199h10"/>
+    <path d="M105 193l14 8-14 8-14-8zM105 193v16M91 201l14 8 14-8"/>
+    <path d="M174 189h31v25h-31zM180 207l6-9 6 5 7-12"/>
+    <path d="M259 188l18 18M277 188l-18 18M268 182v30M253 197h30"/>
+    <path d="M24 262l10-18 10 18M29 255h10M34 244v18"/>
+    <path d="M91 248h28v23H91zM91 248l14 8 14-8M105 256v15"/>
+    <path d="M166 247h27v25h-27zM171 253h17M171 260h11"/>
+    <path d="M238 248l17-8 17 8v20h-34zM238 248l17 8 17-8M255 256v12"/>
+    <path d="M302 244l-9 9h7c0 8-5 13-12 15 11 1 19-7 19-17h7z"/>
+    <path d="M54 304l8-8 8 8M62 292v18M54 300h16"/>
+    <path d="M133 293h29v22h-29zM140 300h15M140 307h10"/>
+    <path d="M211 293c0-9 14-9 14 0 0 5-7 8-7 8s-7-3-7-8zM218 285v17"/>
+    <path d="M278 291h25v23h-25zM283 297h15M283 304h11"/>
+  </g>
+  <g stroke="#789a5b" stroke-width="2" stroke-linecap="round" opacity=".42">
+    <path d="M12 61l6 6 11-13"/><path d="M141 115h20M151 105v20"/><path d="M215 56l9 9 15-17"/>
+    <path d="M72 177l8 8 13-15"/><path d="M221 176l6 6 10-12"/><path d="M137 225h20M147 215v20"/>
+    <path d="M14 222l12-12M26 210l-12 12"/><path d="M287 178l12 12M299 178l-12 12"/><path d="M184 285l8 8 13-15"/>
+  </g>
+  <g fill="#173f38" opacity=".28" font-family="DM Sans, sans-serif" font-size="16" font-weight="700">
+    <text x="15" y="113">₹</text><text x="145" y="57">%</text><text x="282" y="112">+</text><text x="71" y="230">↗</text><text x="218" y="232">₹</text><text x="112" y="282">%</text>
+  </g>
+</svg>

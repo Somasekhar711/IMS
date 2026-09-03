@@ -50,8 +50,15 @@ function App() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('stockit_token');
+    localStorage.removeItem('stockit_user');
+    setCurrentUser(null);
+    setIsLoggedIn(false);
+  };
+
   if (isLoggedIn) {
-    return <DashboardPage user={currentUser} />;
+    return <DashboardPage user={currentUser} onLogout={handleLogout} />;
   }
 
   return (

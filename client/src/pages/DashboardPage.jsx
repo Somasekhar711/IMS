@@ -5,9 +5,11 @@ import {
   Bell,
   Boxes,
   ClipboardList,
+  ChevronDown,
   DollarSign,
   LayoutDashboard,
   LineChart,
+  LogOut,
   Menu,
   Package,
   PanelLeftClose,
@@ -40,8 +42,11 @@ const navigation = [
   { label: 'Settings', icon: Settings },
 ];
 
-function DashboardPage({ user }) {
+function DashboardPage({ user, onLogout }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [dateRange, setDateRange] = useState('Current stock');
   const [selectedModule, setSelectedModule] = useState('Dashboard');
   const [products, setProducts] = useState([]);
   const [productError, setProductError] = useState('');
@@ -113,12 +118,12 @@ function DashboardPage({ user }) {
         <header className="dashboard-header">
           <button className="menu-button" onClick={() => setIsMenuOpen(true)} aria-label="Open navigation"><Menu size={20} /></button>
           <div className="dashboard-title"><span>Inventory Management</span><strong>{selectedModule}</strong></div>
-          <div className="header-actions"><button className="search-button" aria-label="Search inventory"><Search size={18} /></button><button className="notification-button" aria-label="View notifications"><Bell size={18} /><i /></button><div className="header-user"><div className="avatar">{initials}</div><span>{user?.role || 'Admin'}</span></div></div>
+          <div className="header-actions"><button className="search-button" aria-label="Search inventory"><Search size={18} /></button><button className="notification-button" aria-label="View notifications"><Bell size={18} /><i /></button><div className="user-menu"><button className="header-user" onClick={() => setIsUserMenuOpen(!isUserMenuOpen)} aria-expanded={isUserMenuOpen} aria-haspopup="menu"><div className="avatar">{initials}</div><span>{user?.role || 'Admin'}</span><ChevronDown size={14} /></button>{isUserMenuOpen && <div className="user-dropdown" role="menu"><div className="user-dropdown__identity"><strong>{displayName}</strong><span>{user?.email || 'Account'}</span></div><button onClick={onLogout} role="menuitem"><LogOut size={15} /> Logout</button></div>}</div></div>
         </header>
 
   {productError && <div className="dashboard-error">{productError}</div>}
   {selectedModule === 'Products' ? <ProductsListPage products={products} onUpdateProduct={updateProduct} onDeleteProduct={deleteProduct} onAddProduct={() => openModule('Add Product')} /> : selectedModule === 'Add Product' ? <AddProductPage products={products} onAddProduct={addProduct} onUpdateProduct={updateProduct} onBack={() => openModule('Products')} /> : selectedModule === 'Inventory' ? <InventoryPage products={products} onAdjustStock={adjustStock} /> : <div className="dashboard-main">
-          <div className="dashboard-intro"><div><p className="eyebrow">{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p><h1>Good morning, {displayName.split(' ')[0]}.</h1><p>Here is what is happening across your inventory today.</p></div><button className="date-filter">Current stock <span>⌄</span></button></div>
+          <div className="dashboard-intro"><div><p className="eyebrow">{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p><h1>Good morning, {displayName.split(' ')[0]}.</h1><p>Here is what is happening across your inventory today.</p></div><div className="filter-menu"><button className="date-filter" onClick={() => setIsFilterOpen(!isFilterOpen)} aria-expanded={isFilterOpen} aria-haspopup="menu">{dateRange} <ChevronDown size={14} /></button>{isFilterOpen && <div className="filter-options" role="menu"><button onClick={() => { setDateRange('Current stock'); setIsFilterOpen(false); }}>Current stock</button><button onClick={() => { setDateRange('Last 7 days'); setIsFilterOpen(false); }}>Last 7 days</button><button onClick={() => { setDateRange('Last 30 days'); setIsFilterOpen(false); }}>Last 30 days</button></div>}</div></div>
 
           <div className="summary-grid">
             {summaryCards.map(({ label, value, detail, icon: Icon, tone, module }) => <button className="summary-card" key={label} onClick={() => openModule(module)}><div className={`summary-icon ${tone}`}><Icon size={17} /></div><div className="summary-card__copy"><span>{label}</span><strong>{value}</strong><small>{detail}</small></div><span className="card-arrow">↗</span></button>)}

@@ -55,9 +55,23 @@ export function createProduct(product) {
   });
 }
 
+export function updateProduct(id, product) {
+  return request(`/products/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(product),
+  });
+}
+
 export function deleteProduct(id) {
   return request(`/products/${id}`, {
     method: 'DELETE',
+  });
+}
+
+export function adjustStock(id, stockPresent, stockUpdatedDate) {
+  return request(`/products/${id}/stock`, {
+    method: 'PATCH',
+    body: JSON.stringify({ stockPresent, stockUpdatedDate }),
   });
 }
 

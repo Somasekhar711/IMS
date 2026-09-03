@@ -158,4 +158,136 @@ router.delete('/:id', authRequired, (req, res) => {
   });
 });
 
+router.put('/:id', authRequired, async (req, res) => {
+  const { id } = req.params;
+  const {
+    hsn,
+    itemName,
+    itemPrice,
+    itemCategory,
+    gst,
+    discount,
+    mfd,
+    expiryDate,
+    stockUpdatedDate,
+    stockPresent,
+    thresholdStock,
+  } = req.body;
+
+  if (!hsn || !itemName || itemPrice === undefined || itemPrice === null || itemPrice === '') {
+    return res.status(400).json({ message: 'HSN, item name, and price are required' });
+  }
+
+  let categoryId = null;
+
+  try {
+    if (itemCategory && itemCategory.trim()) {
+      const catResult = await pool.query('SELECT id FROM categories WHERE name = $1', [itemCategory.trim()]);
+      if (catResult.rowCount > 0) {
+        categoryId = catResult.rows[0].id;
+      } else {
+        const insertResult = await pool.query('INSERT INTO categories (name) VALUES ($1) RETURNING id', [itemCategory.trim()]);
+        categoryId = insertResult.rows[0].id;
+      }
+    }
+  } catch (err) {
+    console.error('Category error', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+
+  const sql = `
+    UPDATE products
+    SET hsn = $1, item_name = $2, item_price = $3, category_id = $4, gst_percent = $5, discount_percent = $6,
+        manufactured_date = $7, expiry_date = $8, stock_updated_date = $9, stock_present = $10, threshold_stock = $11, updated_at = NOW()
+    WHERE id = $12
+    RETURNING id, hsn, item_name, item_price, gst_percent, discount_percent, manufactured_date, expiry_date, stock_updated_date, stock_present, threshold_stock
+  `;
+
+  const values = [
+    hsn,
+    itemName,
+    Number(itemPrice) || 0,
+    categoryId,
+    Number(gst) || 0,
+    Number(discount) || 0,
+    mfd || null,
+    expiryDate || null,
+    stockUpdatedDate || null,
+    Number(stockPresent) || 0,
+    Number(thresholdStock) || 0,
+    id,
+  ];
+
+  try {
+    const result = await pool.query(sql, values);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    const row = result.rows[0];
+
+    return res.json({
+      id: row.id,
+      hsn: row.hsn,
+      itemName: row.item_name,
+      itemPrice: Number(row.item_price),
+      itemCategory: itemCategory || '',
+      gst: Number(row.gst_percent),
+      discount: Number(row.discount_percent),
+      mfd: row.manufactured_date || '',
+      expiryDate: row.expiry_date || '',
+      stockUpdatedDate: row.stock_updated_date || '',
+      stockPresent: row.stock_present,
+      thresholdStock: row.threshold_stock,
+    });
+  } catch (err) {
+    console.error('Database error', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.patch('/:id/stock', authRequired, (req, res) => {
+  const { id } = req.params;
+  const { stockPresent, stockUpdatedDate } = req.body;
+
+  if (stockPresent === undefined || stockPresent === null || stockPresent === '') {
+    return res.status(400).json({ message: 'stockPresent is required' });
+  }
+
+  const sql = `
+    UPDATE products
+    SET stock_present = $1, stock_updated_date = $2, updated_at = NOW()
+    WHERE id = $3
+    RETURNING id, hsn, item_name, item_price, gst_percent, discount_percent, manufactured_date, expiry_date, stock_updated_date, stock_present, threshold_stock
+  `;
+
+  pool.query(sql, [Number(stockPresent) || 0, stockUpdatedDate || null, id], (err, result) => {
+    if (err) {
+      console.error('Database error', err);
+      return res.status(500).json({ message: 'Server error' });
+    }
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    const row = result.rows[0];
+
+    return res.json({
+      id: row.id,
+      hsn: row.hsn,
+      itemName: row.item_name,
+      itemPrice: Number(row.item_price),
+      itemCategory: '',
+      gst: Number(row.gst_percent),
+      discount: Number(row.discount_percent),
+      mfd: row.manufactured_date || '',
+      expiryDate: row.expiry_date || '',
+      stockUpdatedDate: row.stock_updated_date || '',
+      stockPresent: row.stock_present,
+      thresholdStock: row.threshold_stock,
+    });
+  });
+});
+
 export default router;

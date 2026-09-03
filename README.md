@@ -27,6 +27,7 @@ The client also includes the first dashboard modules:
 - Product create, read, update, and delete interactions
 - Product search and stock threshold highlighting
 - Inventory page with stock summaries, filters, status indicators, and stock adjustments
+- Product catalogs are isolated per authenticated user
 
 Authentication, products, and stock adjustments are connected to the Express API and PostgreSQL. Purchase, sales, and stock movement history modules are still pending backend implementation.
 
@@ -40,6 +41,8 @@ IMS/
 │   │   │   ├── LoginPage.jsx
 │   │   │   ├── RegisterPage.jsx
 │   │   │   ├── DashboardPage.jsx
+│   │   │   ├── ProductsListPage.jsx
+│   │   │   ├── InventoryPage.jsx
 │   │   │   └── ProductPage.jsx
 │   │   ├── main.jsx
 │   │   └── styles.css
@@ -70,7 +73,7 @@ npm run build
 
 ## Database Setup
 
-PostgreSQL is used for the StockIt database. The first migration is in [server/db/001_initial_schema.sql](server/db/001_initial_schema.sql).
+PostgreSQL is used for the StockIt database. The migrations are in [server/db/001_initial_schema.sql](server/db/001_initial_schema.sql), [server/db/002_product_ownership.sql](server/db/002_product_ownership.sql), and [server/db/003_backfill_product_owners.sql](server/db/003_backfill_product_owners.sql).
 
 The initial schema contains only the tables needed for the current features:
 
@@ -78,15 +81,19 @@ The initial schema contains only the tables needed for the current features:
 - `categories`: product categories
 - `products`: catalog, pricing, tax, expiry, and stock information
 
+Each product belongs to the account that created it, so users cannot see or modify another user's products.
+
 ### Create the Database
 
-Create a database named `stockit` using pgAdmin or SQL Shell. Then open `server/db/001_initial_schema.sql` in pgAdmin's Query Tool and execute it while connected to `stockit`.
+Create a database named `stockit` using pgAdmin or SQL Shell. Then run the numbered SQL migrations in order while connected to `stockit`.
 
 If the PostgreSQL command-line client is installed, the equivalent commands are:
 
 ```bash
 createdb -U postgres stockit
 psql -U postgres -d stockit -f server/db/001_initial_schema.sql
+psql -U postgres -d stockit -f server/db/002_product_ownership.sql
+psql -U postgres -d stockit -f server/db/003_backfill_product_owners.sql
 ```
 
 Do not store plain-text passwords in `users.password_hash`; the backend will hash passwords before inserting them.

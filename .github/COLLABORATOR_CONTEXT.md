@@ -14,11 +14,11 @@ The repository is hosted at https://github.com/Somasekhar711/IMS.
 
 ## Current Repository State
 
-The frontend is implemented in `client/`. The `server/` directory is reserved for the backend and currently contains the first database migration plus a placeholder file.
+The frontend is implemented in `client/`. The `server/` directory contains the Express backend and numbered database migrations.
 
-The initial database migration is available at `server/db/001_initial_schema.sql`. It creates only `users`, `categories`, and `products`; it has not been connected to the API yet.
+The initial database migration is available at `server/db/001_initial_schema.sql`. Product ownership is added by `002_product_ownership.sql`, and pre-existing products are assigned by `003_backfill_product_owners.sql`.
 
-The current frontend is a UI prototype. Authentication and product data are not connected to an API or database yet. Product data is held in React component state and is lost when the page is refreshed.
+Authentication, product data, and stock updates are connected to the Express API and PostgreSQL. Product data is scoped to the authenticated account and persists across page refreshes.
 
 ## Implemented Features
 
@@ -56,6 +56,7 @@ The current frontend is a UI prototype. Authentication and product data are not 
 - Low-stock highlighting based on current stock and threshold
 - Edit and delete product interactions
 - Dashboard state mirrors product data loaded from the authenticated API while switching between the list and add screens
+- Product reads and writes are scoped to `products.owner_user_id`, so separate accounts have separate catalogs
 
 ### Inventory
 
@@ -78,7 +79,7 @@ The current frontend is a UI prototype. Authentication and product data are not 
 5. Dashboard identity comes from the authenticated user response; no default user is used.
 6. Other dashboard modules currently remain dashboard selections/placeholders until their pages are implemented.
 
-This is a local prototype transition only. Do not treat it as real authentication.
+The login and registration flow uses JWT authentication. Purchase, sales, and movement history modules remain pending.
 
 ## Project Structure
 
@@ -102,7 +103,9 @@ IMS/
 │   └── package.json
 ├── server/
 │   └── db/
-│       └── 001_initial_schema.sql
+│       ├── 001_initial_schema.sql
+│       ├── 002_product_ownership.sql
+│       └── 003_backfill_product_owners.sql
 └── README.md
 ```
 

@@ -81,17 +81,31 @@ router.post('/', authRequired, async (req, res) => {
     return res.status(400).json({ message: 'HSN, item name, and price are required' });
   }
 
+  const parsedItemPrice = Number(itemPrice);
+  const parsedGst = gst === undefined || gst === null || gst === '' ? 0 : Number(gst);
+  const parsedDiscount = discount === undefined || discount === null || discount === '' ? 0 : Number(discount);
+  const parsedStockPresent = stockPresent === undefined || stockPresent === null || stockPresent === '' ? 0 : Number(stockPresent);
+  const parsedThresholdStock = thresholdStock === undefined || thresholdStock === null || thresholdStock === '' ? 0 : Number(thresholdStock);
+
+  if (
+    Number.isNaN(parsedItemPrice) ||
+    Number.isNaN(parsedGst) ||
+    Number.isNaN(parsedDiscount) ||
+    Number.isNaN(parsedStockPresent) ||
+    Number.isNaN(parsedThresholdStock)
+  ) {
+    return res.status(400).json({ message: 'Price, GST, discount, and stock fields must be valid numbers' });
+  }
+
   let categoryId = null;
 
   try {
     if (itemCategory && itemCategory.trim()) {
-      const catResult = await pool.query('SELECT id FROM categories WHERE name = $1', [itemCategory.trim()]);
-      if (catResult.rowCount > 0) {
-        categoryId = catResult.rows[0].id;
-      } else {
-        const insertResult = await pool.query('INSERT INTO categories (name) VALUES ($1) RETURNING id', [itemCategory.trim()]);
-        categoryId = insertResult.rows[0].id;
-      }
+      const category = await pool.query(
+        'INSERT INTO categories (name) VALUES ($1) ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id',
+        [itemCategory.trim()]
+      );
+      categoryId = category.rows[0].id;
     }
   } catch (err) {
     console.error('Category error', err);
@@ -108,15 +122,15 @@ router.post('/', authRequired, async (req, res) => {
     req.user.id,
     hsn,
     itemName,
-    Number(itemPrice) || 0,
+    parsedItemPrice,
     categoryId,
-    Number(gst) || 0,
-    Number(discount) || 0,
+    parsedGst,
+    parsedDiscount,
     mfd || null,
     expiryDate || null,
     stockUpdatedDate || null,
-    Number(stockPresent) || 0,
-    Number(thresholdStock) || 0,
+    parsedStockPresent,
+    parsedThresholdStock,
   ];
 
   try {

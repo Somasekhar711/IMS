@@ -43,7 +43,7 @@ IMS/
 │   │   │   ├── DashboardPage.jsx
 │   │   │   ├── ProductsListPage.jsx
 │   │   │   ├── InventoryPage.jsx
-│   │   │   └── ProductPage.jsx
+│   │   │   └── AddProductPage.jsx
 │   │   ├── main.jsx
 │   │   └── styles.css
 │   ├── index.html

@@ -7,8 +7,9 @@ const router = express.Router();
 
 router.post('/register', (req, res) => {
   const { fullName, email, password } = req.body;
+  const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
 
-  if (!fullName || !email || !password) {
+  if (!fullName || !normalizedEmail || !password) {
     return res.status(400).json({ message: 'fullName, email, and password are required' });
   }
 
@@ -16,7 +17,7 @@ router.post('/register', (req, res) => {
     return res.status(400).json({ message: 'Password must be at least 8 characters' });
   }
 
-  pool.query('SELECT id FROM users WHERE email = $1', [email], async (err, result) => {
+  pool.query('SELECT id FROM users WHERE email = $1', [normalizedEmail], async (err, result) => {
     if (err) {
       console.error('Database error', err);
       return res.status(500).json({ message: 'Server error' });
@@ -31,7 +32,7 @@ router.post('/register', (req, res) => {
 
       pool.query(
         'INSERT INTO users (full_name, email, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING id, full_name, email, role',
-        [fullName, email, passwordHash, 'admin'],
+        [fullName, normalizedEmail, passwordHash, 'staff'],
         (err, insertResult) => {
           if (err) {
             console.error('Database error', err);
@@ -39,9 +40,15 @@ router.post('/register', (req, res) => {
           }
 
           const user = insertResult.rows[0];
-          const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, {
-            expiresIn: '7d',
-          });
+          let token;
+          try {
+            token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, {
+              expiresIn: '7d',
+            });
+          } catch (tokenError) {
+            console.error('JWT error', tokenError);
+            return res.status(500).json({ message: 'Server error' });
+          }
 
           return res.status(201).json({
             id: user.id,
@@ -61,12 +68,13 @@ router.post('/register', (req, res) => {
 
 router.post('/login', (req, res) => {
   const { email, password } = req.body;
+  const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
 
-  if (!email || !password) {
+  if (!normalizedEmail || !password) {
     return res.status(400).json({ message: 'Email and password are required' });
   }
 
-  pool.query('SELECT id, full_name, email, password_hash, role FROM users WHERE email = $1', [email], async (err, result) => {
+  pool.query('SELECT id, full_name, email, password_hash, role FROM users WHERE email = $1', [normalizedEmail], async (err, result) => {
     if (err) {
       console.error('Database error', err);
       return res.status(500).json({ message: 'Server error' });

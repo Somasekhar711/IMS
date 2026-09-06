@@ -1,9 +1,10 @@
 import express from 'express';
 import pool from '../config/db.js';
+import { authRequired } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
+router.get('/', authRequired, (req, res) => {
   pool.query('SELECT id, name, description, created_at FROM categories ORDER BY name ASC', (err, result) => {
     if (err) {
       console.error('Database error', err);
@@ -14,7 +15,7 @@ router.get('/', (req, res) => {
   });
 });
 
-router.post('/', (req, res) => {
+router.post('/', authRequired, (req, res) => {
   const { name, description } = req.body;
 
   if (!name || !name.trim()) {

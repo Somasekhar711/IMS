@@ -85,11 +85,18 @@ router.post('/', authRequired, async (req, res) => {
 
   try {
     if (itemCategory && itemCategory.trim()) {
-      const catResult = await pool.query('SELECT id FROM categories WHERE name = $1', [itemCategory.trim()]);
+      const catResult = await pool.query(
+        'SELECT id FROM categories WHERE owner_user_id = $1 AND LOWER(name) = LOWER($2)',
+        [req.user.id, itemCategory.trim()]
+      );
+
       if (catResult.rowCount > 0) {
         categoryId = catResult.rows[0].id;
       } else {
-        const insertResult = await pool.query('INSERT INTO categories (name) VALUES ($1) RETURNING id', [itemCategory.trim()]);
+        const insertResult = await pool.query(
+          'INSERT INTO categories (owner_user_id, name) VALUES ($1, $2) RETURNING id',
+          [req.user.id, itemCategory.trim()]
+        );
         categoryId = insertResult.rows[0].id;
       }
     }
@@ -167,8 +174,20 @@ router.put('/:id', authRequired, async (req, res) => {
   try {
     let categoryId = null;
     if (itemCategory && itemCategory.trim()) {
-      const category = await pool.query('INSERT INTO categories (name) VALUES ($1) ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id', [itemCategory.trim()]);
-      categoryId = category.rows[0].id;
+      const existingCategory = await pool.query(
+        'SELECT id FROM categories WHERE owner_user_id = $1 AND LOWER(name) = LOWER($2)',
+        [req.user.id, itemCategory.trim()]
+      );
+
+      if (existingCategory.rowCount > 0) {
+        categoryId = existingCategory.rows[0].id;
+      } else {
+        const category = await pool.query(
+          'INSERT INTO categories (owner_user_id, name) VALUES ($1, $2) RETURNING id',
+          [req.user.id, itemCategory.trim()]
+        );
+        categoryId = category.rows[0].id;
+      }
     }
 
     const result = await pool.query(`

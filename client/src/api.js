@@ -75,13 +75,27 @@ export function adjustProductStock(id, stockPresent) {
   });
 }
 
-export function getCategories() {
-  return request('/categories');
+export function getCategories(search = '') {
+  const query = search ? `?search=${encodeURIComponent(search)}` : '';
+  return request(`/categories${query}`);
 }
 
 export function createCategory(name, description = '') {
   return request('/categories', {
     method: 'POST',
     body: JSON.stringify({ name, description }),
+  });
+}
+
+export function updateCategory(id, name, description = '') {
+  return request(`/categories/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ name, description }),
+  });
+}
+
+export function deleteCategory(id) {
+  return request(`/categories/${id}`, {
+    method: 'DELETE',
   });
 }

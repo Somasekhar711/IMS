@@ -23,6 +23,7 @@ import {
   X,
 } from 'lucide-react';
 import { AddProductPage } from './AddProductPage';
+import { CategoriesPage } from './CategoriesPage';
 import { ProductsListPage } from './ProductsListPage';
 import { InventoryPage } from './InventoryPage';
 import { adjustProductStock, createProduct, deleteProduct as deleteProductRequest, getProducts, updateProduct as updateProductRequest } from '../api';
@@ -61,6 +62,7 @@ function DashboardPage({ user, onLogout }) {
     const daysUntilExpiry = (new Date(product.expiryDate) - new Date()) / 86400000;
     return daysUntilExpiry >= 0 && daysUntilExpiry <= 30;
   }).length;
+  const inventoryAlerts = lowStockCount + outOfStockCount + expiringSoonCount;
   const summaryCards = [
     { label: 'Products', value: productCount.toLocaleString(), detail: 'Cataloged products', icon: Package, tone: 'green', module: 'Products' },
     { label: 'Stock units', value: stockUnits.toLocaleString(), detail: 'Current available units', icon: Boxes, tone: 'blue', module: 'Inventory' },
@@ -72,8 +74,18 @@ function DashboardPage({ user, onLogout }) {
   const displayName = user?.fullName || 'User';
   const initials = displayName.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
 
+  const refreshProducts = async () => {
+    try {
+      const nextProducts = await getProducts();
+      setProducts(nextProducts);
+      setProductError('');
+    } catch (error) {
+      setProductError(error.message || 'Unable to load products');
+    }
+  };
+
   useEffect(() => {
-    getProducts().then(setProducts).catch((error) => setProductError(error.message || 'Unable to load products'));
+    refreshProducts();
   }, []);
 
   const openModule = (module) => {
@@ -108,7 +120,17 @@ function DashboardPage({ user, onLogout }) {
       <aside className={`dashboard-sidebar ${isMenuOpen ? 'is-open' : ''}`}>
         <div className="sidebar-brand"><div className="brand-mark"><Package size={18} /></div><span>StockIt</span><button className="drawer-close" onClick={() => setIsMenuOpen(false)} aria-label="Close navigation"><PanelLeftClose size={18} /></button></div>
         <nav className="dashboard-nav" aria-label="Main navigation">
-          {navigation.map(({ label, icon: Icon, separated }) => <button className={`${selectedModule === label ? 'is-active' : ''} ${separated ? 'is-separated' : ''}`} key={label} onClick={() => openModule(label)}><Icon size={17} /><span>{label}</span>{label === 'Inventory' && <span className="nav-badge">3</span>}</button>)}
+          {navigation.map(({ label, icon: Icon, separated }) => (
+            <button
+              className={`${selectedModule === label ? 'is-active' : ''} ${separated ? 'is-separated' : ''}`}
+              key={label}
+              onClick={() => openModule(label)}
+            >
+              <Icon size={17} />
+              <span>{label}</span>
+              {label === 'Inventory' && inventoryAlerts > 0 && <span className="nav-badge">{inventoryAlerts}</span>}
+            </button>
+          ))}
         </nav>
         <div className="sidebar-footer"><div className="avatar">{initials}</div><div><strong>{displayName}</strong><span>{user?.role || 'Administrator'}</span></div><button aria-label="Open settings" onClick={() => openModule('Settings')}><Settings size={16} /></button></div>
       </aside>
@@ -122,7 +144,7 @@ function DashboardPage({ user, onLogout }) {
         </header>
 
   {productError && <div className="dashboard-error">{productError}</div>}
-  {selectedModule === 'Products' ? <ProductsListPage products={products} onUpdateProduct={updateProduct} onDeleteProduct={deleteProduct} onAddProduct={() => openModule('Add Product')} /> : selectedModule === 'Add Product' ? <AddProductPage products={products} onAddProduct={addProduct} onUpdateProduct={updateProduct} onBack={() => openModule('Products')} /> : selectedModule === 'Inventory' ? <InventoryPage products={products} onAdjustStock={adjustStock} /> : <div className="dashboard-main">
+  {selectedModule === 'Products' ? <ProductsListPage products={products} onUpdateProduct={updateProduct} onDeleteProduct={deleteProduct} onAddProduct={() => openModule('Add Product')} /> : selectedModule === 'Add Product' ? <AddProductPage products={products} onAddProduct={addProduct} onUpdateProduct={updateProduct} onBack={() => openModule('Products')} /> : selectedModule === 'Inventory' ? <InventoryPage products={products} onAdjustStock={adjustStock} /> : selectedModule === 'Categories' ? <CategoriesPage products={products} onCategoryChange={refreshProducts} /> : <div className="dashboard-main">
           <div className="dashboard-intro"><div><p className="eyebrow">{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p><h1>Good morning, {displayName.split(' ')[0]}.</h1><p>Here is what is happening across your inventory today.</p></div><div className="filter-menu"><button className="date-filter" onClick={() => setIsFilterOpen(!isFilterOpen)} aria-expanded={isFilterOpen} aria-haspopup="menu">{dateRange} <ChevronDown size={14} /></button>{isFilterOpen && <div className="filter-options" role="menu"><button onClick={() => { setDateRange('Current stock'); setIsFilterOpen(false); }}>Current stock</button><button onClick={() => { setDateRange('Last 7 days'); setIsFilterOpen(false); }}>Last 7 days</button><button onClick={() => { setDateRange('Last 30 days'); setIsFilterOpen(false); }}>Last 30 days</button></div>}</div></div>
 
           <div className="summary-grid">

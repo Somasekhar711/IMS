@@ -89,7 +89,46 @@ form { display: grid; gap: 19px; }.field { display: grid; gap: 8px; }.field > sp
 .product-form .field { gap: 7px; }
 .product-form input { width: 100%; height: 43px; padding: 0 11px; border: 1px solid #d9ddd2; border-radius: 4px; outline: 0; color: #17221e; background: #fff; font-size: 12px; }
 .product-form input:focus { border-color: #5c8a78; box-shadow: 0 0 0 3px rgba(92,138,120,.12); }
+.category-field { position: relative; }
+.category-input-wrap { position: relative; }
+.category-suggestions { position: absolute; z-index: 5; top: calc(100% + 6px); left: 0; right: 0; display: grid; gap: 4px; padding: 8px; margin: 0; border: 1px solid #d9ddd2; border-radius: 4px; background: #fff; box-shadow: 0 10px 22px rgba(23,63,56,.06); list-style: none; }
+.category-suggestions li { margin: 0; }
+.category-suggestions button { width: 100%; padding: 9px 10px; border: 0; border-radius: 4px; background: #f7f9f4; color: #20352b; font-size: 11px; text-align: left; cursor: pointer; }
+.category-suggestions button:hover { background: #eef5df; }
 .product-submit { grid-column: 4; height: 43px; margin-top: 14px; }
+.category-detail-row td {
+  background: #f8faf5;
+  border-top: 1px solid #edf0e8;
+}
+.category-product-list {
+  display: grid;
+  gap: 10px;
+  padding: 14px 12px;
+}
+.category-product-list strong {
+  color: #20352b;
+  font-size: 12px;
+}
+.category-product-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.category-product-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid #dfe9d1;
+  border-radius: 999px;
+  color: #304d43;
+  background: #f1f8df;
+  font-size: 10px;
+  font-weight: 600;
+}
+.category-empty-state {
+  color: #8b978e;
+  font-size: 11px;
+}
 .product-list-section { margin-top: 30px; }
 .product-list-heading { align-items: center; margin-bottom: 15px; }
 .product-search { display: flex; align-items: center; gap: 8px; width: min(100%, 230px); height: 38px; padding: 0 11px; border: 1px solid #dbe1d6; border-radius: 4px; color: #829087; background: #fff; }

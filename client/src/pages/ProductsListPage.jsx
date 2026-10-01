@@ -3,8 +3,8 @@ import { Check, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import { getCategories } from '../api';
 import { productFields } from './productFields';
 
-function ProductsListPage({ products, onUpdateProduct, onDeleteProduct, onAddProduct }) {
-  const [searchTerm, setSearchTerm] = useState('');
+function ProductsListPage({ products, onUpdateProduct, onDeleteProduct, onAddProduct, initialSearchTerm = '' }) {
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [editingProduct, setEditingProduct] = useState(null);
   const [isUpdateOpen, setIsUpdateOpen] = useState(false);
   const [lookupTerm, setLookupTerm] = useState('');

@@ -105,11 +105,13 @@ npm run build
 
 ## Database Setup
 
-PostgreSQL is used for the StockIt database. Run the numbered migrations in order from [server/db](server/db): initial schema, product ownership, product owner backfill, category ownership, suppliers, customers, purchase orders, sales orders, inventory movements, team roster, and user preferences.
+PostgreSQL is used for the StockIt database. Run the numbered migrations in order from [server/db](server/db): initial schema, product ownership, product owner backfill, category ownership, suppliers, customers, purchase orders, sales orders, inventory movements, team roster, user preferences, password reset tokens, email verification tokens, and the OTP auth update.
 
 The migrations build up all the tables the app uses:
 
-- `users`: account details, password hashes, roles, and preferences (phone, currency symbol, low-stock alert toggle)
+- `users`: account details, password hashes, roles, verification status, and preferences (phone, currency symbol, low-stock alert toggle)
+- `password_reset_tokens`: short-lived, single-use OTP codes backing the "forgot password" email flow
+- `email_verification_tokens`: short-lived, single-use OTP codes backing the "verify your email" flow sent on registration
 - `categories`: product categories
 - `products`: catalog, pricing, tax, expiry, and stock information
 - `suppliers` / `customers`: account-scoped contact directories
@@ -140,11 +142,23 @@ psql -U postgres -d stockit -f server/db/008_sales_orders.sql
 psql -U postgres -d stockit -f server/db/009_inventory_movements.sql
 psql -U postgres -d stockit -f server/db/010_team_members.sql
 psql -U postgres -d stockit -f server/db/011_user_preferences.sql
+psql -U postgres -d stockit -f server/db/012_password_reset.sql
+psql -U postgres -d stockit -f server/db/013_email_verification.sql
+psql -U postgres -d stockit -f server/db/014_otp_auth.sql
 ```
 
 Do not store plain-text passwords in `users.password_hash`; the backend will hash passwords before inserting them.
 
-Future schema changes should be added as new numbered migrations (the next one would be `012_...sql`), rather than editing or replacing an already-run migration.
+Future schema changes should be added as new numbered migrations (the next one would be `015_...sql`), rather than editing or replacing an already-run migration.
+
+### Account Emails
+
+Both the "forgot password" and "verify your email" flows send a 6-digit OTP code via SMTP (hashed at rest, single-use, and locked out after 5 wrong guesses):
+
+- `POST /api/auth/forgot-password` (body: `email`) emails a reset code, expires in 10 minutes; `POST /api/auth/reset-password` (body: `email`, `otp`, `newPassword`) applies it.
+- Registration automatically emails a verification code, expires in 30 minutes. New accounts can sign in right away — the dashboard shows a "Verify your email" banner where the code is entered (`POST /api/auth/verify-email`, authenticated, body: `otp`); `POST /api/auth/resend-verification` (authenticated) sends a new one.
+
+Configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, and `MAIL_FROM` in `server/.env` (see `server/.env.example`). If `SMTP_HOST` is left unset, codes are logged to the server console instead of emailed, which is useful for local development.
 
 ## Repository
 

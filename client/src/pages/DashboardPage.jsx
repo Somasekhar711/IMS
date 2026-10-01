@@ -4,13 +4,16 @@ import {
   BarChart3,
   Bell,
   Boxes,
+  CircleUserRound,
   ClipboardList,
   ChevronDown,
+  Clock,
   Contact,
   DollarSign,
   LayoutDashboard,
   LineChart,
   LogOut,
+  Mail,
   Menu,
   Package,
   PanelLeftClose,
@@ -21,6 +24,7 @@ import {
   ShoppingCart,
   Tags,
   Truck,
+  User,
   UsersRound,
   X,
 } from 'lucide-react';
@@ -36,7 +40,7 @@ import { UsersRolesPage } from './UsersRolesPage';
 import { SettingsPage } from './SettingsPage';
 import { ProductsListPage } from './ProductsListPage';
 import { InventoryPage } from './InventoryPage';
-import { adjustProductStock, createProduct, deleteProduct as deleteProductRequest, getInventoryMovements, getProducts, updateProduct as updateProductRequest } from '../api';
+import { adjustProductStock, createProduct, deleteProduct as deleteProductRequest, getInventoryMovements, getProducts, resendVerificationEmail, updateProduct as updateProductRequest, verifyEmail } from '../api';
 import { SettingsProvider, useSettings } from '../settingsContext';
 
 const navigation = [
@@ -78,23 +82,42 @@ function DashboardContent({ user, onLogout, onProfileUpdated }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [productsSearchTerm, setProductsSearchTerm] = useState('');
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [dateRange, setDateRange] = useState('Current stock');
   const [selectedModule, setSelectedModule] = useState('Dashboard');
   const [products, setProducts] = useState([]);
   const [productError, setProductError] = useState('');
   const [recentMovements, setRecentMovements] = useState([]);
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
+  const [verificationNotice, setVerificationNotice] = useState('');
+  const [verificationOtp, setVerificationOtp] = useState('');
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
 
   const productCount = products.length;
   const stockUnits = products.reduce((total, product) => total + (Number(product.stockPresent) || 0), 0);
   const inventoryValue = products.reduce((total, product) => total + ((Number(product.itemPrice) || 0) * (Number(product.stockPresent) || 0)), 0);
-  const lowStockCount = products.filter((product) => Number(product.stockPresent) > 0 && Number(product.stockPresent) <= Number(product.thresholdStock)).length;
-  const outOfStockCount = products.filter((product) => Number(product.stockPresent) === 0).length;
-  const expiringSoonCount = products.filter((product) => {
+  const outOfStockItems = products.filter((product) => Number(product.stockPresent) === 0);
+  const lowStockItems = products.filter((product) => Number(product.stockPresent) > 0 && Number(product.stockPresent) <= Number(product.thresholdStock));
+  const expiringSoonItems = products.filter((product) => {
     if (!product.expiryDate) return false;
     const daysUntilExpiry = (new Date(product.expiryDate) - new Date()) / 86400000;
     return daysUntilExpiry >= 0 && daysUntilExpiry <= 30;
-  }).length;
+  });
+  const lowStockCount = lowStockItems.length;
+  const outOfStockCount = outOfStockItems.length;
+  const expiringSoonCount = expiringSoonItems.length;
   const inventoryAlerts = lowStockCount + outOfStockCount + expiringSoonCount;
+  const notifications = [
+    ...outOfStockItems.map((product) => ({ id: `out-${product.id}`, icon: X, tone: 'red', title: `${product.itemName} is out of stock`, message: 'Replenish stock to avoid missed sales.' })),
+    ...lowStockItems.map((product) => ({ id: `low-${product.id}`, icon: AlertTriangle, tone: 'orange', title: `${product.itemName} is running low`, message: `${product.stockPresent} units left (threshold ${product.thresholdStock}).` })),
+    ...expiringSoonItems.map((product) => ({ id: `exp-${product.id}`, icon: Clock, tone: 'pink', title: `${product.itemName} expires soon`, message: `Expires on ${product.expiryDate}.` })),
+  ];
+  const searchResults = searchQuery.trim()
+    ? products.filter((item) => `${item.itemName} ${item.hsn} ${item.itemCategory}`.toLowerCase().includes(searchQuery.trim().toLowerCase())).slice(0, 6)
+    : [];
   const summaryCards = [
     { label: 'Products', value: productCount.toLocaleString(), detail: 'Cataloged products', icon: Package, tone: 'green', module: 'Products' },
     { label: 'Stock units', value: stockUnits.toLocaleString(), detail: 'Current available units', icon: Boxes, tone: 'blue', module: 'Inventory' },
@@ -136,6 +159,75 @@ function DashboardContent({ user, onLogout, onProfileUpdated }) {
   const openModule = (module) => {
     setSelectedModule(module);
     setIsMenuOpen(false);
+  };
+
+  const goToProduct = (product) => {
+    setProductsSearchTerm(product.itemName);
+    setSearchQuery('');
+    setIsSearchOpen(false);
+    openModule('Products');
+  };
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    if (searchResults.length) {
+      goToProduct(searchResults[0]);
+    } else if (searchQuery.trim()) {
+      setProductsSearchTerm(searchQuery.trim());
+      setSearchQuery('');
+      setIsSearchOpen(false);
+      openModule('Products');
+    }
+  };
+
+  const toggleSearch = () => {
+    setIsSearchOpen((open) => !open);
+    setIsNotificationsOpen(false);
+    setIsUserMenuOpen(false);
+  };
+
+  const toggleNotifications = () => {
+    setIsNotificationsOpen((open) => !open);
+    setIsSearchOpen(false);
+    setIsUserMenuOpen(false);
+  };
+
+  const toggleUserMenu = () => {
+    setIsUserMenuOpen((open) => !open);
+    setIsSearchOpen(false);
+    setIsNotificationsOpen(false);
+  };
+
+  const handleResendVerification = async () => {
+    setIsResendingVerification(true);
+    setVerificationNotice('');
+    try {
+      const result = await resendVerificationEmail();
+      if (result.alreadyVerified) {
+        onProfileUpdated?.({ emailVerified: true });
+      } else {
+        setVerificationNotice('Verification email sent. Check your inbox.');
+      }
+    } catch (error) {
+      setVerificationNotice(error.message || 'Unable to resend verification email');
+    } finally {
+      setIsResendingVerification(false);
+    }
+  };
+
+  const handleVerifyOtp = async (event) => {
+    event.preventDefault();
+    setIsVerifyingOtp(true);
+    setVerificationNotice('');
+    try {
+      await verifyEmail(verificationOtp.trim());
+      setVerificationOtp('');
+      onProfileUpdated?.({ emailVerified: true });
+    } catch (error) {
+      setVerificationNotice(error.message || 'Invalid or expired code');
+    } finally {
+      setIsVerifyingOtp(false);
+    }
   };
 
   const addProduct = async (product) => {
@@ -186,11 +278,78 @@ function DashboardContent({ user, onLogout, onProfileUpdated }) {
         <header className="dashboard-header">
           <button className="menu-button" onClick={() => setIsMenuOpen(true)} aria-label="Open navigation"><Menu size={20} /></button>
           <div className="dashboard-title"><span>Inventory Management</span><strong>{selectedModule}</strong></div>
-          <div className="header-actions"><button className="search-button" aria-label="Search inventory"><Search size={18} /></button><button className="notification-button" aria-label="View notifications"><Bell size={18} /><i /></button><div className="user-menu"><button className="header-user" onClick={() => setIsUserMenuOpen(!isUserMenuOpen)} aria-expanded={isUserMenuOpen} aria-haspopup="menu"><div className="avatar">{initials}</div><span>{user?.role || 'Admin'}</span><ChevronDown size={14} /></button>{isUserMenuOpen && <div className="user-dropdown" role="menu"><div className="user-dropdown__identity"><strong>{displayName}</strong><span>{user?.email || 'Account'}</span></div><button onClick={onLogout} role="menuitem"><LogOut size={15} /> Logout</button></div>}</div></div>
+          <div className="header-actions">
+            <div className="search-menu">
+              <button className="search-button" aria-label="Search inventory" onClick={toggleSearch} aria-expanded={isSearchOpen} aria-haspopup="true"><Search size={18} /></button>
+              {isSearchOpen && (
+                <div className="search-dropdown" role="search">
+                  <form className="search-dropdown__input" onSubmit={handleSearchSubmit}>
+                    <Search size={15} />
+                    <input autoFocus value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search products, HSN, category" aria-label="Search inventory" />
+                  </form>
+                  {searchQuery.trim() && (
+                    searchResults.length ? (
+                      <ul className="search-results" role="listbox">
+                        {searchResults.map((product) => (
+                          <li key={product.id}>
+                            <button type="button" onClick={() => goToProduct(product)}>
+                              <strong>{product.itemName}</strong>
+                              <span>{product.itemCategory || 'Uncategorized'} · {product.stockPresent || 0} in stock</span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : <div className="search-empty">No products match "{searchQuery}".</div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="notification-menu">
+              <button className="notification-button" aria-label="View notifications" onClick={toggleNotifications} aria-expanded={isNotificationsOpen} aria-haspopup="true"><Bell size={18} />{notifications.length > 0 && <i />}</button>
+              {isNotificationsOpen && (
+                <div className="notification-dropdown" role="menu">
+                  <div className="notification-dropdown__heading"><strong>Notifications</strong><span>{notifications.length} alert{notifications.length === 1 ? '' : 's'}</span></div>
+                  {notifications.length ? (
+                    <ul className="notification-list">
+                      {notifications.slice(0, 8).map(({ id, icon: Icon, tone, title, message }) => (
+                        <li key={id}>
+                          <button type="button" onClick={() => { openModule('Inventory'); setIsNotificationsOpen(false); }}>
+                            <span className={`notification-icon ${tone}`}><Icon size={14} /></span>
+                            <span className="notification-copy"><strong>{title}</strong><small>{message}</small></span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : <div className="notification-empty">You're all caught up. No alerts right now.</div>}
+                  {notifications.length > 0 && <button className="text-button notification-view-all" onClick={() => { openModule('Inventory'); setIsNotificationsOpen(false); }}>View all in Inventory</button>}
+                </div>
+              )}
+            </div>
+            <div className="user-menu">
+              <button className="header-user" onClick={toggleUserMenu} aria-expanded={isUserMenuOpen} aria-haspopup="menu"><CircleUserRound size={28} strokeWidth={1.4} className="header-user__icon" /><span>{user?.role || 'Admin'}</span><ChevronDown size={14} /></button>
+              {isUserMenuOpen && (
+                <div className="user-dropdown" role="menu">
+                  <div className="user-dropdown__identity"><strong>{displayName}</strong><span>{user?.email || 'Account'}</span></div>
+                  <button className="user-dropdown__item" onClick={() => { openModule('Settings'); setIsUserMenuOpen(false); }} role="menuitem"><User size={15} /> View profile</button>
+                  <button className="user-dropdown__logout" onClick={onLogout} role="menuitem"><LogOut size={15} /> Logout</button>
+                </div>
+              )}
+            </div>
+          </div>
         </header>
 
+  {user && !user.emailVerified && (
+    <div className="verify-banner">
+      <span><Mail size={15} /> <strong>Verify your email</strong> — enter the code sent to {user.email}.{verificationNotice ? ` ${verificationNotice}` : ''}</span>
+      <form className="verify-banner__form" onSubmit={handleVerifyOtp}>
+        <input value={verificationOtp} onChange={(event) => setVerificationOtp(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="6-digit code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} required />
+        <button type="submit" disabled={isVerifyingOtp || verificationOtp.length !== 6}>{isVerifyingOtp ? 'Verifying...' : 'Verify'}</button>
+        <button type="button" onClick={handleResendVerification} disabled={isResendingVerification}>{isResendingVerification ? 'Sending...' : 'Resend'}</button>
+      </form>
+    </div>
+  )}
   {productError && <div className="dashboard-error">{productError}</div>}
-  {selectedModule === 'Products' ? <ProductsListPage products={products} onUpdateProduct={updateProduct} onDeleteProduct={deleteProduct} onAddProduct={() => openModule('Add Product')} />
+  {selectedModule === 'Products' ? <ProductsListPage products={products} onUpdateProduct={updateProduct} onDeleteProduct={deleteProduct} onAddProduct={() => openModule('Add Product')} initialSearchTerm={productsSearchTerm} />
     : selectedModule === 'Add Product' ? <AddProductPage products={products} onAddProduct={addProduct} onUpdateProduct={updateProduct} onBack={() => openModule('Products')} />
     : selectedModule === 'Inventory' ? <InventoryPage products={products} onAdjustStock={adjustStock} />
     : selectedModule === 'Categories' ? <CategoriesPage products={products} onCategoryChange={refreshProducts} />

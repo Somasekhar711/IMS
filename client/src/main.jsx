@@ -3,12 +3,13 @@ import { LockKeyhole, Package } from 'lucide-react';
 import { createRoot } from 'react-dom/client';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { login, register } from './api';
 import './styles.css';
 
 function App() {
-  const [isRegistering, setIsRegistering] = useState(false);
+  const [authView, setAuthView] = useState('login');
   const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('stockit_token'));
   const [currentUser, setCurrentUser] = useState(() => {
     try {
@@ -19,8 +20,8 @@ function App() {
   });
   const [authError, setAuthError] = useState('');
 
-  const switchMode = (registering) => {
-    setIsRegistering(registering);
+  const switchMode = (nextView) => {
+    setAuthView(nextView);
     setAuthError('');
   };
 
@@ -97,24 +98,32 @@ function App() {
           </div>
         </div>
 
-        
+
       </section>
 
       <section className="form-panel">
         <div className="form-panel__inner">
           <div className="mobile-brand"><div className="brand-mark"><Package size={18} /></div><span>StockIt</span></div>
-          <div className="mode-switch" role="tablist" aria-label="Authentication mode">
-            <button className={!isRegistering ? 'is-active' : ''} onClick={() => switchMode(false)} role="tab" aria-selected={!isRegistering}>Sign in</button>
-            <button className={isRegistering ? 'is-active' : ''} onClick={() => switchMode(true)} role="tab" aria-selected={isRegistering}>Create account</button>
-          </div>
 
-          {isRegistering ? (
-            <RegisterPage onRegister={handleRegister} error={authError} />
+          {authView === 'forgot' ? (
+            <ForgotPasswordPage onBackToLogin={() => switchMode('login')} />
           ) : (
-            <LoginPage onLogin={handleLogin} error={authError} />
+            <>
+              <div className="mode-switch" role="tablist" aria-label="Authentication mode">
+                <button className={authView === 'login' ? 'is-active' : ''} onClick={() => switchMode('login')} role="tab" aria-selected={authView === 'login'}>Sign in</button>
+                <button className={authView === 'register' ? 'is-active' : ''} onClick={() => switchMode('register')} role="tab" aria-selected={authView === 'register'}>Create account</button>
+              </div>
+
+              {authView === 'register' ? (
+                <RegisterPage onRegister={handleRegister} error={authError} />
+              ) : (
+                <LoginPage onLogin={handleLogin} error={authError} onForgotPassword={() => switchMode('forgot')} />
+              )}
+
+              <p className="mode-prompt">{authView === 'register' ? 'Already have an account?' : 'New to StockIt?'} <button onClick={() => switchMode(authView === 'register' ? 'login' : 'register')}>{authView === 'register' ? 'Sign in' : 'Create an account'}</button></p>
+            </>
           )}
 
-          <p className="mode-prompt">{isRegistering ? 'Already have an account?' : 'New to StockIt?'} <button onClick={() => switchMode(!isRegistering)}>{isRegistering ? 'Sign in' : 'Create an account'}</button></p>
           <p className="security-note"><LockKeyhole size={14} /> Your data is encrypted and private.</p>
         </div>
       </section>

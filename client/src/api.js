@@ -43,6 +43,33 @@ export function register(fullName, email, password) {
   });
 }
 
+export function forgotPassword(email) {
+  return request('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
+export function resetPassword(email, otp, newPassword) {
+  return request('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ email, otp, newPassword }),
+  });
+}
+
+export function verifyEmail(otp) {
+  return request('/auth/verify-email', {
+    method: 'POST',
+    body: JSON.stringify({ otp }),
+  });
+}
+
+export function resendVerificationEmail() {
+  return request('/auth/resend-verification', {
+    method: 'POST',
+  });
+}
+
 export function getProducts(search = '') {
   const query = search ? `?search=${encodeURIComponent(search)}` : '';
   return request(`/products${query}`);

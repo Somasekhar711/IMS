@@ -89,7 +89,7 @@ function App() {
           </div>
         </div>
 
-        <div className="brand-panel__footer"><span>01</span><span className="footer-line" /><span>Make room for better stock decisions.</span></div>
+        
       </section>
 
       <section className="form-panel">

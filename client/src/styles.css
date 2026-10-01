@@ -179,3 +179,52 @@ form { display: grid; gap: 19px; }.field { display: grid; gap: 8px; }.field > sp
 
 @media (max-width: 900px) { .supplier-product-options { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 700px) { .supplier-product-options { grid-template-columns: 1fr; }.supplier-notes-field { grid-column: 1 / -1; }.supplier-table { min-width: 690px; }.supplier-table-actions .secondary-action { padding: 8px; font-size: 10px; } }
+
+.product-form select { width: 100%; height: 43px; padding: 0 11px; border: 1px solid #d9ddd2; border-radius: 4px; outline: 0; color: #17221e; background: #fff; font-size: 12px; }
+.product-form select:focus { border-color: #5c8a78; box-shadow: 0 0 0 3px rgba(92,138,120,.12); }
+
+.order-items { display: grid; gap: 10px; grid-column: 1 / -1; }
+.order-items legend { padding: 0 6px; color: #52665a; font-size: 11px; font-weight: 700; }
+.order-item-row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, .8fr) minmax(0, 1fr) minmax(0, 1fr) auto; gap: 10px; align-items: end; }
+.order-item-row .field { gap: 6px; }
+.order-item-row .field span { color: #8b978e; font-size: 10px; font-weight: 600; }
+.order-line-total { display: flex; flex-direction: column; gap: 6px; }
+.order-line-total strong { display: flex; align-items: center; height: 43px; padding: 0 11px; border: 1px solid #edf0e8; border-radius: 4px; color: #344a3d; background: #f8faf5; font-size: 12px; }
+.order-remove-line { align-self: center; color: #b7746a; }
+.order-add-line { justify-self: start; }
+.order-summary { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding-top: 16px; border-top: 1px solid #eef0eb; }
+.order-summary span { color: #718176; font-size: 11px; }
+.order-summary strong { color: #20352b; font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 500; }
+
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 3px; font-size: 9px; font-weight: 700; text-transform: capitalize; white-space: nowrap; }
+.badge.green { color: #357662; background: #e5f2df; }
+.badge.blue { color: #4a7790; background: #e1eff1; }
+.badge.gold { color: #9b7433; background: #f8edca; }
+.badge.orange { color: #b86c36; background: #fce8d3; }
+.badge.red { color: #b65350; background: #f8dfdc; }
+.badge.purple { color: #80639c; background: #eee3f3; }
+.badge.teal { color: #3e8c84; background: #def0e9; }
+
+.order-detail-row td { background: #f8faf5; }
+.order-detail-content { display: grid; gap: 10px; padding: 12px; }
+.order-line-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+.order-line-table th { padding: 6px 8px; color: #91a096; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: 9px; text-align: left; }
+.order-line-table td { padding: 6px 8px; border-top: 1px solid #eef0eb; color: #52665a; }
+
+.settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 24px; align-items: start; }
+.settings-card.full { grid-column: 1 / -1; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid #eef0eb; }
+.toggle-row:last-child { border-bottom: 0; }
+.toggle-row strong { display: block; color: #20352b; font-size: 12px; }
+.toggle-row span { color: #8b978e; font-size: 10px; }
+.toggle-switch { position: relative; flex: 0 0 auto; width: 42px; height: 24px; }
+.toggle-switch input { position: absolute; inset: 0; margin: 0; cursor: pointer; opacity: 0; z-index: 1; }
+.toggle-track { position: absolute; inset: 0; border-radius: 999px; background: #d9ddd2; transition: background .2s; }
+.toggle-thumb { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .2s; }
+.toggle-switch input:checked ~ .toggle-track { background: #3c7564; }
+.toggle-switch input:checked ~ .toggle-thumb { transform: translateX(18px); }
+
+.roster-note { margin: -14px 0 25px; padding: 11px 14px; border: 1px solid #dbe1d6; border-radius: 4px; color: #6f7d73; background: #fff; font-size: 11px; line-height: 1.5; }
+
+@media (max-width: 900px) { .order-item-row { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 700px) { .settings-grid { grid-template-columns: 1fr; } }

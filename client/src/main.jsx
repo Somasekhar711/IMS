@@ -57,8 +57,16 @@ function App() {
     setIsLoggedIn(false);
   };
 
+  const handleProfileUpdated = (updatedUser) => {
+    setCurrentUser((current) => {
+      const next = { ...current, ...updatedUser };
+      localStorage.setItem('stockit_user', JSON.stringify(next));
+      return next;
+    });
+  };
+
   if (isLoggedIn) {
-    return <DashboardPage user={currentUser} onLogout={handleLogout} />;
+    return <DashboardPage user={currentUser} onLogout={handleLogout} onProfileUpdated={handleProfileUpdated} />;
   }
 
   return (

@@ -212,15 +212,38 @@ router.put('/:id', authRequired, async (req, res) => {
 router.patch('/:id/stock', authRequired, async (req, res) => {
   const { id } = req.params;
   const stockPresent = Number(req.body.stockPresent);
+  const reason = typeof req.body.reason === 'string' ? req.body.reason.trim() : '';
   if (!Number.isInteger(stockPresent) || stockPresent < 0) return res.status(400).json({ message: 'Stock must be a non-negative integer' });
 
+  const client = await pool.connect();
   try {
-    const result = await pool.query('UPDATE products SET stock_present = $1, stock_updated_date = CURRENT_DATE, updated_at = NOW() WHERE id = $2 AND owner_user_id = $3 RETURNING id, stock_present, stock_updated_date', [stockPresent, id, req.user.id]);
-    if (result.rowCount === 0) return res.status(404).json({ message: 'Product not found' });
+    await client.query('BEGIN');
+
+    const current = await client.query('SELECT stock_present FROM products WHERE id = $1 AND owner_user_id = $2 FOR UPDATE', [id, req.user.id]);
+    if (current.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    const previousStock = Number(current.rows[0].stock_present);
+    const result = await client.query('UPDATE products SET stock_present = $1, stock_updated_date = CURRENT_DATE, updated_at = NOW() WHERE id = $2 AND owner_user_id = $3 RETURNING id, stock_present, stock_updated_date', [stockPresent, id, req.user.id]);
+
+    const quantityChange = stockPresent - previousStock;
+    if (quantityChange !== 0) {
+      await client.query(`
+        INSERT INTO inventory_movements (owner_user_id, product_id, movement_type, quantity_change, reference_type, note, stock_after)
+        VALUES ($1, $2, 'adjustment', $3, 'manual', $4, $5)
+      `, [req.user.id, id, quantityChange, reason || null, stockPresent]);
+    }
+
+    await client.query('COMMIT');
     return res.json({ id: result.rows[0].id, stockPresent: result.rows[0].stock_present, stockUpdatedDate: result.rows[0].stock_updated_date });
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('Database error', err);
     return res.status(500).json({ message: 'Server error' });
+  } finally {
+    client.release();
   }
 });
 

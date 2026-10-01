@@ -18,20 +18,27 @@ The client currently includes the authentication UI:
 - Password requirements for minimum length, uppercase letter, number, and special character
 - Responsive StockIt branding
 
-The client also includes the first dashboard modules:
+The client also includes the full set of dashboard modules:
 
-- Dashboard summary cards with inventory and sales information
+- Dashboard summary cards with inventory and sales information, backed by live stock movement data
 - Responsive hamburger navigation for inventory modules
-- Warehouse pulse chart and recent activity panel
+- Warehouse pulse chart and recent activity panel, populated from the inventory movements ledger
 - Separate Products list and Add Product screens
 - Product create, read, update, and delete interactions
 - Product search and stock threshold highlighting
 - Inventory page with stock summaries, filters, status indicators, and stock adjustments
 - User-scoped category management with product listings and safe deletion
-- Supplier directory with contact details and product associations
-- Product catalogs are isolated per authenticated user
+- Supplier and customer directories with contact details and (for suppliers) product associations
+- Purchase orders: record stock received from suppliers as line items; saving adds straight to inventory
+- Sales orders: record stock sold to customers as line items; saving removes it from inventory and is rejected if it would oversell
+- Purchase and sales orders can be deleted, which reverses their stock impact
+- Stock movements: a read-only, filterable ledger of every purchase, sale, and manual stock adjustment
+- Reports: sales/purchases totals, order counts, top-selling products, and stock health for a selected date range
+- Users & roles: an account-scoped team roster (name, role, status, contact details) for tracking who does what — a contact list, not a shared login
+- Settings: profile editing, password change, and preferences (currency symbol, low-stock alert toggle) that apply across the dashboard
+- Product catalogs, suppliers, customers, orders, and the team roster are all isolated per authenticated user
 
-Authentication, products, stock adjustments, categories, and suppliers are connected to the Express API and PostgreSQL. Purchase, sales, and stock movement history modules are still pending backend implementation.
+Authentication, products, stock adjustments, categories, suppliers, customers, purchase orders, sales orders, stock movements, reports, the team roster, and account settings are all connected to the Express API and PostgreSQL.
 
 ## Project Structure
 
@@ -44,15 +51,36 @@ IMS/
 │   │   │   ├── RegisterPage.jsx
 │   │   │   ├── DashboardPage.jsx
 │   │   │   ├── ProductsListPage.jsx
+│   │   │   ├── AddProductPage.jsx
 │   │   │   ├── InventoryPage.jsx
 │   │   │   ├── CategoriesPage.jsx
 │   │   │   ├── SuppliersPage.jsx
-│   │   │   └── ProductPage.jsx
+│   │   │   ├── CustomersPage.jsx
+│   │   │   ├── PurchaseOrdersPage.jsx
+│   │   │   ├── SalesOrdersPage.jsx
+│   │   │   ├── StockMovementsPage.jsx
+│   │   │   ├── ReportsPage.jsx
+│   │   │   ├── UsersRolesPage.jsx
+│   │   │   └── SettingsPage.jsx
 │   │   ├── main.jsx
+│   │   ├── api.js
+│   │   ├── settingsContext.jsx
 │   │   └── styles.css
 │   ├── index.html
 │   └── package.json
 └── server/
+	├── routes/
+	│   ├── auth.js
+	│   ├── products.js
+	│   ├── categories.js
+	│   ├── suppliers.js
+	│   ├── customers.js
+	│   ├── purchaseOrders.js
+	│   ├── salesOrders.js
+	│   ├── inventoryMovements.js
+	│   ├── reports.js
+	│   ├── teamMembers.js
+	│   └── settings.js
 	└── db/
 		└── 001_initial_schema.sql
 ```
@@ -77,17 +105,21 @@ npm run build
 
 ## Database Setup
 
-PostgreSQL is used for the StockIt database. Run the numbered migrations in order from [server/db](server/db): initial schema, product ownership, product owner backfill, category ownership, and suppliers.
+PostgreSQL is used for the StockIt database. Run the numbered migrations in order from [server/db](server/db): initial schema, product ownership, product owner backfill, category ownership, suppliers, customers, purchase orders, sales orders, inventory movements, team roster, and user preferences.
 
-The initial schema contains only the tables needed for the current features:
+The migrations build up all the tables the app uses:
 
-- `users`: account details, password hashes, and roles
+- `users`: account details, password hashes, roles, and preferences (phone, currency symbol, low-stock alert toggle)
 - `categories`: product categories
 - `products`: catalog, pricing, tax, expiry, and stock information
-- `suppliers`: account-scoped supplier contact details
+- `suppliers` / `customers`: account-scoped contact directories
 - `supplier_products`: account-validated links between suppliers and products
+- `purchase_orders` / `purchase_order_items`: stock received from suppliers; posting adds to product stock
+- `sales_orders` / `sales_order_items`: stock sold to customers; posting removes from product stock (rejected if it would oversell)
+- `inventory_movements`: a ledger every purchase, sale, and manual stock adjustment writes to
+- `team_members`: an account-scoped contact roster of roles (not separate login accounts)
 
-Each product belongs to the account that created it, so users cannot see or modify another user's products.
+Each of these rows belongs to the account that created it, so users cannot see or modify another user's data.
 
 ### Create the Database
 
@@ -102,11 +134,17 @@ psql -U postgres -d stockit -f server/db/002_product_ownership.sql
 psql -U postgres -d stockit -f server/db/003_backfill_product_owners.sql
 psql -U postgres -d stockit -f server/db/004_category_ownership.sql
 psql -U postgres -d stockit -f server/db/005_suppliers.sql
+psql -U postgres -d stockit -f server/db/006_customers.sql
+psql -U postgres -d stockit -f server/db/007_purchase_orders.sql
+psql -U postgres -d stockit -f server/db/008_sales_orders.sql
+psql -U postgres -d stockit -f server/db/009_inventory_movements.sql
+psql -U postgres -d stockit -f server/db/010_team_members.sql
+psql -U postgres -d stockit -f server/db/011_user_preferences.sql
 ```
 
 Do not store plain-text passwords in `users.password_hash`; the backend will hash passwords before inserting them.
 
-Future schema changes should be added as new numbered migrations, such as `002_inventory_movements.sql`, rather than editing or replacing an already-run migration.
+Future schema changes should be added as new numbered migrations (the next one would be `012_...sql`), rather than editing or replacing an already-run migration.
 
 ## Repository
 

@@ -5,6 +5,13 @@ import authRoutes from './routes/auth.js';
 import productRoutes from './routes/products.js';
 import categoryRoutes from './routes/categories.js';
 import supplierRoutes from './routes/suppliers.js';
+import customerRoutes from './routes/customers.js';
+import purchaseOrderRoutes from './routes/purchaseOrders.js';
+import salesOrderRoutes from './routes/salesOrders.js';
+import inventoryMovementRoutes from './routes/inventoryMovements.js';
+import reportRoutes from './routes/reports.js';
+import teamMemberRoutes from './routes/teamMembers.js';
+import settingsRoutes from './routes/settings.js';
 
 dotenv.config();
 
@@ -36,6 +43,13 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/suppliers', supplierRoutes);
+app.use('/api/customers', customerRoutes);
+app.use('/api/purchase-orders', purchaseOrderRoutes);
+app.use('/api/sales-orders', salesOrderRoutes);
+app.use('/api/inventory-movements', inventoryMovementRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/team-members', teamMemberRoutes);
+app.use('/api/settings', settingsRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: 'Not found' });

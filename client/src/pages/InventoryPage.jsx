@@ -44,7 +44,7 @@ function InventoryPage({ products, onAdjustStock }) {
     const currentStock = Number(selectedProduct.stockPresent) || 0;
     const nextStock = adjustmentType === 'remove' ? currentStock - amount : amount + currentStock;
     if (nextStock < 0) return;
-    onAdjustStock(selectedProduct.id, nextStock);
+    onAdjustStock(selectedProduct.id, nextStock, reason);
     setSelectedProduct(null);
   };
 

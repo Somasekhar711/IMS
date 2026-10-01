@@ -6,6 +6,7 @@ import {
   Boxes,
   ClipboardList,
   ChevronDown,
+  Contact,
   DollarSign,
   LayoutDashboard,
   LineChart,
@@ -15,7 +16,8 @@ import {
   PanelLeftClose,
   Search,
   Plus,
-  Settings,
+  Settings as SettingsIcon,
+  SlidersHorizontal,
   ShoppingCart,
   Tags,
   Truck,
@@ -25,9 +27,17 @@ import {
 import { AddProductPage } from './AddProductPage';
 import { CategoriesPage } from './CategoriesPage';
 import { SuppliersPage } from './SuppliersPage';
+import { CustomersPage } from './CustomersPage';
+import { PurchaseOrdersPage } from './PurchaseOrdersPage';
+import { SalesOrdersPage } from './SalesOrdersPage';
+import { StockMovementsPage } from './StockMovementsPage';
+import { ReportsPage } from './ReportsPage';
+import { UsersRolesPage } from './UsersRolesPage';
+import { SettingsPage } from './SettingsPage';
 import { ProductsListPage } from './ProductsListPage';
 import { InventoryPage } from './InventoryPage';
-import { adjustProductStock, createProduct, deleteProduct as deleteProductRequest, getProducts, updateProduct as updateProductRequest } from '../api';
+import { adjustProductStock, createProduct, deleteProduct as deleteProductRequest, getInventoryMovements, getProducts, updateProduct as updateProductRequest } from '../api';
+import { SettingsProvider, useSettings } from '../settingsContext';
 
 const navigation = [
   { label: 'Dashboard', icon: LayoutDashboard },
@@ -36,15 +46,35 @@ const navigation = [
   { label: 'Inventory', icon: Boxes },
   { label: 'Categories', icon: Tags },
   { label: 'Suppliers', icon: Truck, separated: true },
-  { label: 'Purchase Orders', icon: ClipboardList },
+  { label: 'Customers', icon: Contact },
+  { label: 'Purchase Orders', icon: ClipboardList, separated: true },
   { label: 'Sales', icon: ShoppingCart },
   { label: 'Stock Movements', icon: LineChart, separated: true },
   { label: 'Reports', icon: BarChart3 },
   { label: 'Users & Roles', icon: UsersRound, separated: true },
-  { label: 'Settings', icon: Settings },
+  { label: 'Settings', icon: SettingsIcon },
 ];
 
-function DashboardPage({ user, onLogout }) {
+function relativeTime(dateString) {
+  const diffMs = Date.now() - new Date(dateString).getTime();
+  const minutes = Math.round(diffMs / 60000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.round(hours / 24)}d ago`;
+}
+
+function DashboardPage(props) {
+  return (
+    <SettingsProvider>
+      <DashboardContent {...props} />
+    </SettingsProvider>
+  );
+}
+
+function DashboardContent({ user, onLogout, onProfileUpdated }) {
+  const { currencySymbol } = useSettings();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -52,6 +82,7 @@ function DashboardPage({ user, onLogout }) {
   const [selectedModule, setSelectedModule] = useState('Dashboard');
   const [products, setProducts] = useState([]);
   const [productError, setProductError] = useState('');
+  const [recentMovements, setRecentMovements] = useState([]);
 
   const productCount = products.length;
   const stockUnits = products.reduce((total, product) => total + (Number(product.stockPresent) || 0), 0);
@@ -67,7 +98,7 @@ function DashboardPage({ user, onLogout }) {
   const summaryCards = [
     { label: 'Products', value: productCount.toLocaleString(), detail: 'Cataloged products', icon: Package, tone: 'green', module: 'Products' },
     { label: 'Stock units', value: stockUnits.toLocaleString(), detail: 'Current available units', icon: Boxes, tone: 'blue', module: 'Inventory' },
-    { label: 'Inventory value', value: `₹${inventoryValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`, detail: 'Price × current stock', icon: DollarSign, tone: 'gold', module: 'Inventory' },
+    { label: 'Inventory value', value: `${currencySymbol}${inventoryValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`, detail: 'Price × current stock', icon: DollarSign, tone: 'gold', module: 'Inventory' },
     { label: 'Low stock', value: lowStockCount.toLocaleString(), detail: 'At or below threshold', icon: AlertTriangle, tone: 'orange', module: 'Inventory' },
     { label: 'Out of stock', value: outOfStockCount.toLocaleString(), detail: 'Requires replenishment', icon: X, tone: 'red', module: 'Inventory' },
     { label: 'Expiring soon', value: expiringSoonCount.toLocaleString(), detail: 'Within the next 30 days', icon: Bell, tone: 'pink', module: 'Inventory' },
@@ -85,8 +116,21 @@ function DashboardPage({ user, onLogout }) {
     }
   };
 
+  const refreshMovements = async () => {
+    try {
+      setRecentMovements(await getInventoryMovements({ limit: 50 }));
+    } catch {
+      // Non-critical for the dashboard home view; the Stock Movements page surfaces its own errors.
+    }
+  };
+
+  const refreshStockActivity = async () => {
+    await Promise.all([refreshProducts(), refreshMovements()]);
+  };
+
   useEffect(() => {
     refreshProducts();
+    refreshMovements();
   }, []);
 
   const openModule = (module) => {
@@ -110,9 +154,10 @@ function DashboardPage({ user, onLogout }) {
     setProducts((current) => current.filter((product) => product.id !== id));
   };
 
-  const adjustStock = async (id, stockPresent) => {
-    const updatedStock = await adjustProductStock(id, stockPresent);
+  const adjustStock = async (id, stockPresent, reason = '') => {
+    const updatedStock = await adjustProductStock(id, stockPresent, reason);
     setProducts((current) => current.map((product) => product.id === updatedStock.id ? { ...product, ...updatedStock } : product));
+    refreshMovements();
   };
 
   return (
@@ -133,7 +178,7 @@ function DashboardPage({ user, onLogout }) {
             </button>
           ))}
         </nav>
-        <div className="sidebar-footer"><div className="avatar">{initials}</div><div><strong>{displayName}</strong><span>{user?.role || 'Administrator'}</span></div><button aria-label="Open settings" onClick={() => openModule('Settings')}><Settings size={16} /></button></div>
+        <div className="sidebar-footer"><div className="avatar">{initials}</div><div><strong>{displayName}</strong><span>{user?.role || 'Administrator'}</span></div><button aria-label="Open settings" onClick={() => openModule('Settings')}><SettingsIcon size={16} /></button></div>
       </aside>
 
       <section className="dashboard-content">
@@ -145,7 +190,19 @@ function DashboardPage({ user, onLogout }) {
         </header>
 
   {productError && <div className="dashboard-error">{productError}</div>}
-  {selectedModule === 'Products' ? <ProductsListPage products={products} onUpdateProduct={updateProduct} onDeleteProduct={deleteProduct} onAddProduct={() => openModule('Add Product')} /> : selectedModule === 'Add Product' ? <AddProductPage products={products} onAddProduct={addProduct} onUpdateProduct={updateProduct} onBack={() => openModule('Products')} /> : selectedModule === 'Inventory' ? <InventoryPage products={products} onAdjustStock={adjustStock} /> : selectedModule === 'Categories' ? <CategoriesPage products={products} onCategoryChange={refreshProducts} /> : selectedModule === 'Suppliers' ? <SuppliersPage products={products} /> : <div className="dashboard-main">
+  {selectedModule === 'Products' ? <ProductsListPage products={products} onUpdateProduct={updateProduct} onDeleteProduct={deleteProduct} onAddProduct={() => openModule('Add Product')} />
+    : selectedModule === 'Add Product' ? <AddProductPage products={products} onAddProduct={addProduct} onUpdateProduct={updateProduct} onBack={() => openModule('Products')} />
+    : selectedModule === 'Inventory' ? <InventoryPage products={products} onAdjustStock={adjustStock} />
+    : selectedModule === 'Categories' ? <CategoriesPage products={products} onCategoryChange={refreshProducts} />
+    : selectedModule === 'Suppliers' ? <SuppliersPage products={products} />
+    : selectedModule === 'Customers' ? <CustomersPage />
+    : selectedModule === 'Purchase Orders' ? <PurchaseOrdersPage products={products} onOrdersChanged={refreshStockActivity} />
+    : selectedModule === 'Sales' ? <SalesOrdersPage products={products} onOrdersChanged={refreshStockActivity} />
+    : selectedModule === 'Stock Movements' ? <StockMovementsPage products={products} />
+    : selectedModule === 'Reports' ? <ReportsPage />
+    : selectedModule === 'Users & Roles' ? <UsersRolesPage />
+    : selectedModule === 'Settings' ? <SettingsPage user={user} onProfileUpdated={onProfileUpdated} />
+    : <div className="dashboard-main">
           <div className="dashboard-intro"><div><p className="eyebrow">{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p><h1>Good morning, {displayName.split(' ')[0]}.</h1><p>Here is what is happening across your inventory today.</p></div><div className="filter-menu"><button className="date-filter" onClick={() => setIsFilterOpen(!isFilterOpen)} aria-expanded={isFilterOpen} aria-haspopup="menu">{dateRange} <ChevronDown size={14} /></button>{isFilterOpen && <div className="filter-options" role="menu"><button onClick={() => { setDateRange('Current stock'); setIsFilterOpen(false); }}>Current stock</button><button onClick={() => { setDateRange('Last 7 days'); setIsFilterOpen(false); }}>Last 7 days</button><button onClick={() => { setDateRange('Last 30 days'); setIsFilterOpen(false); }}>Last 30 days</button></div>}</div></div>
 
           <div className="summary-grid">
@@ -153,8 +210,47 @@ function DashboardPage({ user, onLogout }) {
           </div>
 
           <div className="dashboard-lower">
-            <section className="panel pulse-panel"><div className="panel-heading"><div><p className="eyebrow">Live overview</p><h2>Warehouse pulse</h2></div><span className="status-pill"><i /> Live</span></div><div className="pulse-empty"><Boxes size={28} /><strong>{stockUnits.toLocaleString()} units currently tracked</strong><span>Stock movement history will appear here once the inventory API is connected.</span></div><div className="pulse-legend"><span><i className="dot-green" /> Available stock <strong>{stockUnits.toLocaleString()}</strong></span><span><i className="dot-orange" /> Low stock items <strong>{lowStockCount}</strong></span></div></section>
-            <section className="panel activity-panel"><div className="panel-heading"><div><p className="eyebrow">Recent updates</p><h2>Activity</h2></div><button className="text-button" onClick={() => openModule('Stock Movements')}>View all</button></div><div className="activity-empty"><Bell size={20} /><strong>No recent activity</strong><span>Activity will appear after stock movements and purchases are recorded.</span></div></section>
+            <section className="panel pulse-panel">
+              <div className="panel-heading"><div><p className="eyebrow">Live overview</p><h2>Warehouse pulse</h2></div><span className="status-pill"><i /> Live</span></div>
+              {recentMovements.length ? (
+                <div className="pulse-empty">
+                  <Boxes size={28} />
+                  <strong>{stockUnits.toLocaleString()} units currently tracked</strong>
+                  <span>
+                    {(() => {
+                      const sevenDaysAgo = Date.now() - 7 * 86400000;
+                      const recent = recentMovements.filter((movement) => new Date(movement.createdAt).getTime() >= sevenDaysAgo);
+                      const netChange = recent.reduce((total, movement) => total + movement.quantityChange, 0);
+                      return `${netChange >= 0 ? '+' : ''}${netChange} units net change across ${recent.length} movement${recent.length === 1 ? '' : 's'} in the last 7 days.`;
+                    })()}
+                  </span>
+                </div>
+              ) : (
+                <div className="pulse-empty"><Boxes size={28} /><strong>{stockUnits.toLocaleString()} units currently tracked</strong><span>Stock movement history will appear here once purchases, sales, or adjustments are recorded.</span></div>
+              )}
+              <div className="pulse-legend"><span><i className="dot-green" /> Available stock <strong>{stockUnits.toLocaleString()}</strong></span><span><i className="dot-orange" /> Low stock items <strong>{lowStockCount}</strong></span></div>
+            </section>
+            <section className="panel activity-panel">
+              <div className="panel-heading"><div><p className="eyebrow">Recent updates</p><h2>Activity</h2></div><button className="text-button" onClick={() => openModule('Stock Movements')}>View all</button></div>
+              {recentMovements.length ? (
+                <div className="activity-list">
+                  {recentMovements.slice(0, 6).map((movement) => (
+                    <button className="activity-item" key={movement.id} onClick={() => openModule('Stock Movements')}>
+                      <div className={`activity-icon ${movement.movementType === 'purchase' ? 'purchase' : movement.movementType === 'sale' ? 'sale' : 'alert'}`}>
+                        {movement.movementType === 'purchase' ? <ClipboardList size={14} /> : movement.movementType === 'sale' ? <ShoppingCart size={14} /> : <SlidersHorizontal size={14} />}
+                      </div>
+                      <div className="activity-copy">
+                        <strong>{movement.itemName}</strong>
+                        <small>{movement.movementType === 'purchase' ? 'Received' : movement.movementType === 'sale' ? 'Sold' : 'Adjusted'} {Math.abs(movement.quantityChange)} units</small>
+                      </div>
+                      <time>{relativeTime(movement.createdAt)}</time>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="activity-empty"><Bell size={20} /><strong>No recent activity</strong><span>Activity will appear after stock movements and purchases are recorded.</span></div>
+              )}
+            </section>
           </div>
         </div>}
       </section>

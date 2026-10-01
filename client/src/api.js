@@ -68,10 +68,10 @@ export function updateProduct(id, product) {
   });
 }
 
-export function adjustProductStock(id, stockPresent) {
+export function adjustProductStock(id, stockPresent, reason = '') {
   return request(`/products/${id}/stock`, {
     method: 'PATCH',
-    body: JSON.stringify({ stockPresent }),
+    body: JSON.stringify({ stockPresent, reason }),
   });
 }
 
@@ -121,5 +121,123 @@ export function updateSupplier(id, supplier) {
 export function deleteSupplier(id) {
   return request(`/suppliers/${id}`, {
     method: 'DELETE',
+  });
+}
+
+export function getCustomers() {
+  return request('/customers');
+}
+
+export function createCustomer(customer) {
+  return request('/customers', {
+    method: 'POST',
+    body: JSON.stringify(customer),
+  });
+}
+
+export function updateCustomer(id, customer) {
+  return request(`/customers/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(customer),
+  });
+}
+
+export function deleteCustomer(id) {
+  return request(`/customers/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export function getPurchaseOrders() {
+  return request('/purchase-orders');
+}
+
+export function createPurchaseOrder(order) {
+  return request('/purchase-orders', {
+    method: 'POST',
+    body: JSON.stringify(order),
+  });
+}
+
+export function deletePurchaseOrder(id) {
+  return request(`/purchase-orders/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export function getSalesOrders() {
+  return request('/sales-orders');
+}
+
+export function createSalesOrder(order) {
+  return request('/sales-orders', {
+    method: 'POST',
+    body: JSON.stringify(order),
+  });
+}
+
+export function deleteSalesOrder(id) {
+  return request(`/sales-orders/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export function getInventoryMovements(params = {}) {
+  const query = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== '')
+  ).toString();
+  return request(`/inventory-movements${query ? `?${query}` : ''}`);
+}
+
+export function getReportsSummary(range = '30') {
+  return request(`/reports/summary?range=${encodeURIComponent(range)}`);
+}
+
+export function getTeamMembers() {
+  return request('/team-members');
+}
+
+export function createTeamMember(member) {
+  return request('/team-members', {
+    method: 'POST',
+    body: JSON.stringify(member),
+  });
+}
+
+export function updateTeamMember(id, member) {
+  return request(`/team-members/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(member),
+  });
+}
+
+export function deleteTeamMember(id) {
+  return request(`/team-members/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export function getSettings() {
+  return request('/settings');
+}
+
+export function updateSettings(settings) {
+  return request('/settings', {
+    method: 'PUT',
+    body: JSON.stringify(settings),
+  });
+}
+
+export function updateProfile(fullName) {
+  return request('/auth/profile', {
+    method: 'PUT',
+    body: JSON.stringify({ fullName }),
+  });
+}
+
+export function updatePassword(currentPassword, newPassword) {
+  return request('/auth/password', {
+    method: 'PUT',
+    body: JSON.stringify({ currentPassword, newPassword }),
   });
 }

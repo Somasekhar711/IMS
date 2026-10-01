@@ -27,9 +27,11 @@ The client also includes the first dashboard modules:
 - Product create, read, update, and delete interactions
 - Product search and stock threshold highlighting
 - Inventory page with stock summaries, filters, status indicators, and stock adjustments
+- User-scoped category management with product listings and safe deletion
+- Supplier directory with contact details and product associations
 - Product catalogs are isolated per authenticated user
 
-Authentication, products, and stock adjustments are connected to the Express API and PostgreSQL. Purchase, sales, and stock movement history modules are still pending backend implementation.
+Authentication, products, stock adjustments, categories, and suppliers are connected to the Express API and PostgreSQL. Purchase, sales, and stock movement history modules are still pending backend implementation.
 
 ## Project Structure
 
@@ -43,6 +45,8 @@ IMS/
 │   │   │   ├── DashboardPage.jsx
 │   │   │   ├── ProductsListPage.jsx
 │   │   │   ├── InventoryPage.jsx
+│   │   │   ├── CategoriesPage.jsx
+│   │   │   ├── SuppliersPage.jsx
 │   │   │   └── ProductPage.jsx
 │   │   ├── main.jsx
 │   │   └── styles.css
@@ -73,13 +77,15 @@ npm run build
 
 ## Database Setup
 
-PostgreSQL is used for the StockIt database. The migrations are in [server/db/001_initial_schema.sql](server/db/001_initial_schema.sql), [server/db/002_product_ownership.sql](server/db/002_product_ownership.sql), and [server/db/003_backfill_product_owners.sql](server/db/003_backfill_product_owners.sql).
+PostgreSQL is used for the StockIt database. Run the numbered migrations in order from [server/db](server/db): initial schema, product ownership, product owner backfill, category ownership, and suppliers.
 
 The initial schema contains only the tables needed for the current features:
 
 - `users`: account details, password hashes, and roles
 - `categories`: product categories
 - `products`: catalog, pricing, tax, expiry, and stock information
+- `suppliers`: account-scoped supplier contact details
+- `supplier_products`: account-validated links between suppliers and products
 
 Each product belongs to the account that created it, so users cannot see or modify another user's products.
 
@@ -94,6 +100,8 @@ createdb -U postgres stockit
 psql -U postgres -d stockit -f server/db/001_initial_schema.sql
 psql -U postgres -d stockit -f server/db/002_product_ownership.sql
 psql -U postgres -d stockit -f server/db/003_backfill_product_owners.sql
+psql -U postgres -d stockit -f server/db/004_category_ownership.sql
+psql -U postgres -d stockit -f server/db/005_suppliers.sql
 ```
 
 Do not store plain-text passwords in `users.password_hash`; the backend will hash passwords before inserting them.

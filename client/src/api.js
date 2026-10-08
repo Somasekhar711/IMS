@@ -36,37 +36,28 @@ export function login(email, password) {
   });
 }
 
-export function register(fullName, email, password) {
+export function register(fullName, email, password, securityQuestion, securityAnswer) {
   return request('/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ fullName, email, password }),
+    body: JSON.stringify({ fullName, email, password, securityQuestion, securityAnswer }),
   });
 }
 
-export function forgotPassword(email) {
-  return request('/auth/forgot-password', {
+export function getSecurityQuestions() {
+  return request('/auth/security-questions');
+}
+
+export function getSecurityQuestionForEmail(email) {
+  return request('/auth/security-question', {
     method: 'POST',
     body: JSON.stringify({ email }),
   });
 }
 
-export function resetPassword(email, otp, newPassword) {
+export function resetPasswordWithSecurityAnswer(email, securityAnswer, newPassword) {
   return request('/auth/reset-password', {
     method: 'POST',
-    body: JSON.stringify({ email, otp, newPassword }),
-  });
-}
-
-export function verifyEmail(otp) {
-  return request('/auth/verify-email', {
-    method: 'POST',
-    body: JSON.stringify({ otp }),
-  });
-}
-
-export function resendVerificationEmail() {
-  return request('/auth/resend-verification', {
-    method: 'POST',
+    body: JSON.stringify({ email, securityAnswer, newPassword }),
   });
 }
 
@@ -266,5 +257,12 @@ export function updatePassword(currentPassword, newPassword) {
   return request('/auth/password', {
     method: 'PUT',
     body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}
+
+export function updateSecurityQuestion(currentPassword, securityQuestion, securityAnswer) {
+  return request('/auth/security-question', {
+    method: 'PUT',
+    body: JSON.stringify({ currentPassword, securityQuestion, securityAnswer }),
   });
 }

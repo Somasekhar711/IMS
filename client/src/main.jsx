@@ -38,9 +38,9 @@ function App() {
     }
   };
 
-  const handleRegister = async (fullName, email, password) => {
+  const handleRegister = async (fullName, email, password, securityQuestion, securityAnswer) => {
     try {
-      const user = await register(fullName, email, password);
+      const user = await register(fullName, email, password, securityQuestion, securityAnswer);
       localStorage.setItem('stockit_token', user.token);
       localStorage.setItem('stockit_user', JSON.stringify(user));
       setCurrentUser(user);

@@ -13,7 +13,6 @@ import {
   LayoutDashboard,
   LineChart,
   LogOut,
-  Mail,
   Menu,
   Package,
   PanelLeftClose,
@@ -40,7 +39,7 @@ import { UsersRolesPage } from './UsersRolesPage';
 import { SettingsPage } from './SettingsPage';
 import { ProductsListPage } from './ProductsListPage';
 import { InventoryPage } from './InventoryPage';
-import { adjustProductStock, createProduct, deleteProduct as deleteProductRequest, getInventoryMovements, getProducts, resendVerificationEmail, updateProduct as updateProductRequest, verifyEmail } from '../api';
+import { adjustProductStock, createProduct, deleteProduct as deleteProductRequest, getInventoryMovements, getProducts, updateProduct as updateProductRequest } from '../api';
 import { SettingsProvider, useSettings } from '../settingsContext';
 
 const navigation = [
@@ -91,10 +90,6 @@ function DashboardContent({ user, onLogout, onProfileUpdated }) {
   const [products, setProducts] = useState([]);
   const [productError, setProductError] = useState('');
   const [recentMovements, setRecentMovements] = useState([]);
-  const [isResendingVerification, setIsResendingVerification] = useState(false);
-  const [verificationNotice, setVerificationNotice] = useState('');
-  const [verificationOtp, setVerificationOtp] = useState('');
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
 
   const productCount = products.length;
   const stockUnits = products.reduce((total, product) => total + (Number(product.stockPresent) || 0), 0);
@@ -196,38 +191,6 @@ function DashboardContent({ user, onLogout, onProfileUpdated }) {
     setIsUserMenuOpen((open) => !open);
     setIsSearchOpen(false);
     setIsNotificationsOpen(false);
-  };
-
-  const handleResendVerification = async () => {
-    setIsResendingVerification(true);
-    setVerificationNotice('');
-    try {
-      const result = await resendVerificationEmail();
-      if (result.alreadyVerified) {
-        onProfileUpdated?.({ emailVerified: true });
-      } else {
-        setVerificationNotice('Verification email sent. Check your inbox.');
-      }
-    } catch (error) {
-      setVerificationNotice(error.message || 'Unable to resend verification email');
-    } finally {
-      setIsResendingVerification(false);
-    }
-  };
-
-  const handleVerifyOtp = async (event) => {
-    event.preventDefault();
-    setIsVerifyingOtp(true);
-    setVerificationNotice('');
-    try {
-      await verifyEmail(verificationOtp.trim());
-      setVerificationOtp('');
-      onProfileUpdated?.({ emailVerified: true });
-    } catch (error) {
-      setVerificationNotice(error.message || 'Invalid or expired code');
-    } finally {
-      setIsVerifyingOtp(false);
-    }
   };
 
   const addProduct = async (product) => {
@@ -338,16 +301,6 @@ function DashboardContent({ user, onLogout, onProfileUpdated }) {
           </div>
         </header>
 
-  {user && !user.emailVerified && (
-    <div className="verify-banner">
-      <span><Mail size={15} /> <strong>Verify your email</strong> — enter the code sent to {user.email}.{verificationNotice ? ` ${verificationNotice}` : ''}</span>
-      <form className="verify-banner__form" onSubmit={handleVerifyOtp}>
-        <input value={verificationOtp} onChange={(event) => setVerificationOtp(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="6-digit code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} required />
-        <button type="submit" disabled={isVerifyingOtp || verificationOtp.length !== 6}>{isVerifyingOtp ? 'Verifying...' : 'Verify'}</button>
-        <button type="button" onClick={handleResendVerification} disabled={isResendingVerification}>{isResendingVerification ? 'Sending...' : 'Resend'}</button>
-      </form>
-    </div>
-  )}
   {productError && <div className="dashboard-error">{productError}</div>}
   {selectedModule === 'Products' ? <ProductsListPage products={products} onUpdateProduct={updateProduct} onDeleteProduct={deleteProduct} onAddProduct={() => openModule('Add Product')} initialSearchTerm={productsSearchTerm} />
     : selectedModule === 'Add Product' ? <AddProductPage products={products} onAddProduct={addProduct} onUpdateProduct={updateProduct} onBack={() => openModule('Products')} />

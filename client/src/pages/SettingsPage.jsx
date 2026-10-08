@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Check, KeyRound, Save, Sliders, User, X } from 'lucide-react';
-import { updatePassword, updateProfile, updateSettings } from '../api';
+import { useEffect, useState } from 'react';
+import { Check, KeyRound, Save, ShieldQuestion, Sliders, User, X } from 'lucide-react';
+import { getSecurityQuestions, updatePassword, updateProfile, updateSecurityQuestion, updateSettings } from '../api';
 import { useSettings } from '../settingsContext';
 
 const currencyOptions = ['₹', '$', '€', '£', '¥'];
@@ -21,6 +21,20 @@ function SettingsPage({ user, onProfileUpdated }) {
   const [preferences, setPreferences] = useState({ phone, currencySymbol, lowStockAlertEnabled });
   const [preferencesMessage, setPreferencesMessage] = useState('');
   const [preferencesError, setPreferencesError] = useState('');
+
+  const [securityQuestions, setSecurityQuestions] = useState([]);
+  const [securityPassword, setSecurityPassword] = useState('');
+  const [securityQuestion, setSecurityQuestion] = useState('');
+  const [securityAnswer, setSecurityAnswer] = useState('');
+  const [securityMessage, setSecurityMessage] = useState('');
+  const [securityError, setSecurityError] = useState('');
+
+  useEffect(() => {
+    getSecurityQuestions().then((questions) => {
+      setSecurityQuestions(questions);
+      setSecurityQuestion((current) => current || questions[0] || '');
+    }).catch(() => {});
+  }, []);
 
   const handleProfileSubmit = async (event) => {
     event.preventDefault();
@@ -53,6 +67,20 @@ function SettingsPage({ user, onProfileUpdated }) {
       setConfirmPassword('');
     } catch (error) {
       setPasswordError(error.message || 'Unable to update password');
+    }
+  };
+
+  const handleSecuritySubmit = async (event) => {
+    event.preventDefault();
+    setSecurityMessage('');
+    setSecurityError('');
+    try {
+      await updateSecurityQuestion(securityPassword, securityQuestion, securityAnswer);
+      setSecurityMessage('Security question updated successfully');
+      setSecurityPassword('');
+      setSecurityAnswer('');
+    } catch (error) {
+      setSecurityError(error.message || 'Unable to update security question');
     }
   };
 
@@ -130,6 +158,34 @@ function SettingsPage({ user, onProfileUpdated }) {
           </form>
           {passwordMessage && <p className="update-message is-success"><Check size={13} /> {passwordMessage}</p>}
           {passwordError && <p className="update-message is-error"><X size={13} /> {passwordError}</p>}
+        </section>
+
+        <section className="product-panel panel settings-card">
+          <div className="panel-heading">
+            <div><p className="eyebrow">Recovery</p><h2>Security question</h2></div>
+            <ShieldQuestion size={19} color="#63866f" />
+          </div>
+          <form className="product-form" style={{ gridTemplateColumns: '1fr' }} onSubmit={handleSecuritySubmit}>
+            <label className="field">
+              <span>Current password</span>
+              <input type="password" value={securityPassword} onChange={(event) => setSecurityPassword(event.target.value)} required />
+            </label>
+            <label className="field">
+              <span>Security question</span>
+              <select value={securityQuestion} onChange={(event) => setSecurityQuestion(event.target.value)} required>
+                {securityQuestions.map((question) => <option value={question} key={question}>{question}</option>)}
+              </select>
+            </label>
+            <label className="field">
+              <span>Security answer</span>
+              <input value={securityAnswer} onChange={(event) => setSecurityAnswer(event.target.value)} placeholder="Your answer" autoComplete="off" required />
+            </label>
+            <div className="supplier-form-actions">
+              <button className="submit-button product-submit" type="submit"><ShieldQuestion size={15} /> Update security question</button>
+            </div>
+          </form>
+          {securityMessage && <p className="update-message is-success"><Check size={13} /> {securityMessage}</p>}
+          {securityError && <p className="update-message is-error"><X size={13} /> {securityError}</p>}
         </section>
 
         <section className="product-panel panel settings-card full">

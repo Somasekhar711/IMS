@@ -19,6 +19,9 @@ router.get('/', authRequired, async (req, res) => {
   const params = [req.user.id];
 
   if (productId) {
+    if (!/^\d+$/.test(productId)) {
+      return res.status(400).json({ message: 'productId must be a valid id' });
+    }
     params.push(productId);
     query += ` AND m.product_id = $${params.length}`;
   }

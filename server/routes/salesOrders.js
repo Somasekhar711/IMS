@@ -87,6 +87,10 @@ router.post('/', authRequired, async (req, res) => {
     await client.query('BEGIN');
 
     if (customerId) {
+      if (!/^\d+$/.test(String(customerId))) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ message: 'Selected customer is unavailable' });
+      }
       const customer = await client.query('SELECT id FROM customers WHERE id = $1 AND owner_user_id = $2', [customerId, req.user.id]);
       if (customer.rowCount === 0) {
         await client.query('ROLLBACK');
@@ -137,9 +141,15 @@ router.post('/', authRequired, async (req, res) => {
       const stockResult = await client.query(`
         UPDATE products
         SET stock_present = stock_present - $1, stock_updated_date = CURRENT_DATE, updated_at = NOW()
-        WHERE id = $2 AND owner_user_id = $3
+        WHERE id = $2 AND owner_user_id = $3 AND stock_present >= $1
         RETURNING stock_present
       `, [item.quantity, item.productId, req.user.id]);
+
+      if (stockResult.rowCount === 0) {
+        await client.query('ROLLBACK');
+        const name = productsResult.rows.find((row) => String(row.id) === item.productId)?.item_name || `product ${item.productId}`;
+        return res.status(409).json({ message: `Not enough stock for ${name}: it may have just been sold in another order.` });
+      }
 
       await client.query(`
         INSERT INTO inventory_movements (owner_user_id, product_id, movement_type, quantity_change, reference_type, reference_id, note, stock_after)
@@ -150,7 +160,7 @@ router.post('/', authRequired, async (req, res) => {
     await client.query('COMMIT');
 
     const customerName = customerId
-      ? (await pool.query('SELECT name FROM customers WHERE id = $1', [customerId])).rows[0]?.name || ''
+      ? (await pool.query('SELECT name FROM customers WHERE id = $1 AND owner_user_id = $2', [customerId, req.user.id])).rows[0]?.name || ''
       : '';
     const itemsWithNames = productsResult.rows.reduce((map, row) => ({ ...map, [row.id]: row.item_name }), {});
 

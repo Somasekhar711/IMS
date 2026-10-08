@@ -87,6 +87,10 @@ router.post('/', authRequired, async (req, res) => {
     await client.query('BEGIN');
 
     if (supplierId) {
+      if (!/^\d+$/.test(String(supplierId))) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ message: 'Selected supplier is unavailable' });
+      }
       const supplier = await client.query('SELECT id FROM suppliers WHERE id = $1 AND owner_user_id = $2', [supplierId, req.user.id]);
       if (supplier.rowCount === 0) {
         await client.query('ROLLBACK');
@@ -136,7 +140,7 @@ router.post('/', authRequired, async (req, res) => {
     await client.query('COMMIT');
 
     const supplierName = supplierId
-      ? (await pool.query('SELECT name FROM suppliers WHERE id = $1', [supplierId])).rows[0]?.name || ''
+      ? (await pool.query('SELECT name FROM suppliers WHERE id = $1 AND owner_user_id = $2', [supplierId, req.user.id])).rows[0]?.name || ''
       : '';
     const itemsWithNames = productsResult.rows.reduce((map, row) => ({ ...map, [row.id]: row.item_name }), {});
 

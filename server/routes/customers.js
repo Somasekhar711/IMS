@@ -1,10 +1,12 @@
 import express from 'express';
 import pool from '../config/db.js';
 import { authRequired } from '../middleware/auth.js';
+import { requirePermission } from '../middleware/permissions.js';
+import { logActivity } from '../config/activityLog.js';
 
 const router = express.Router();
 
-router.get('/', authRequired, async (req, res) => {
+router.get('/', authRequired, requirePermission('customers', 'read'), async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT id, name, contact_person, phone, email, address, tax_id, notes, created_at
@@ -30,7 +32,7 @@ router.get('/', authRequired, async (req, res) => {
   }
 });
 
-router.post('/', authRequired, async (req, res) => {
+router.post('/', authRequired, requirePermission('customers', 'write'), async (req, res) => {
   const { name, contactPerson, phone, email, address, taxId, notes } = req.body;
   const trimmedName = name?.trim();
 
@@ -44,6 +46,7 @@ router.post('/', authRequired, async (req, res) => {
     `, [req.user.id, trimmedName, contactPerson?.trim() || null, phone?.trim() || null, email?.trim() || null, address?.trim() || null, taxId?.trim() || null, notes?.trim() || null]);
 
     const row = result.rows[0];
+    logActivity(req.user.id, req.user, 'create', 'customers', `Added customer "${row.name}"`);
     return res.status(201).json({
       id: row.id,
       name: row.name,
@@ -62,7 +65,7 @@ router.post('/', authRequired, async (req, res) => {
   }
 });
 
-router.put('/:id', authRequired, async (req, res) => {
+router.put('/:id', authRequired, requirePermission('customers', 'write'), async (req, res) => {
   const { id } = req.params;
   const { name, contactPerson, phone, email, address, taxId, notes } = req.body;
   const trimmedName = name?.trim();
@@ -81,6 +84,7 @@ router.put('/:id', authRequired, async (req, res) => {
     if (result.rowCount === 0) return res.status(404).json({ message: 'Customer not found' });
 
     const row = result.rows[0];
+    logActivity(req.user.id, req.user, 'update', 'customers', `Updated customer "${row.name}"`);
     return res.json({
       id: row.id,
       name: row.name,
@@ -99,11 +103,11 @@ router.put('/:id', authRequired, async (req, res) => {
   }
 });
 
-router.delete('/:id', authRequired, async (req, res) => {
+router.delete('/:id', authRequired, requirePermission('customers', 'write'), async (req, res) => {
   const { id } = req.params;
 
   try {
-    const customer = await pool.query('SELECT id FROM customers WHERE id = $1 AND owner_user_id = $2', [id, req.user.id]);
+    const customer = await pool.query('SELECT id, name FROM customers WHERE id = $1 AND owner_user_id = $2', [id, req.user.id]);
     if (customer.rowCount === 0) return res.status(404).json({ message: 'Customer not found' });
 
     const orderCount = await pool.query(
@@ -118,6 +122,7 @@ router.delete('/:id', authRequired, async (req, res) => {
     }
 
     await pool.query('DELETE FROM customers WHERE id = $1 AND owner_user_id = $2', [id, req.user.id]);
+    logActivity(req.user.id, req.user, 'delete', 'customers', `Deleted customer "${customer.rows[0].name}"`);
     return res.status(204).send();
   } catch (error) {
     console.error('Database error', error);

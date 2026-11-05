@@ -13,7 +13,7 @@ const emptySupplier = {
   productIds: [],
 };
 
-function SuppliersPage({ products = [] }) {
+function SuppliersPage({ products = [], canWrite = true }) {
   const [suppliers, setSuppliers] = useState([]);
   const [supplier, setSupplier] = useState(emptySupplier);
   const [editingId, setEditingId] = useState(null);
@@ -139,7 +139,7 @@ function SuppliersPage({ products = [] }) {
         </div>
       </div>
 
-      <section className="product-panel panel supplier-form-panel">
+      {canWrite && <section className="product-panel panel supplier-form-panel">
         <div className="panel-heading">
           <div>
             <p className="eyebrow">Supplier details</p>
@@ -210,7 +210,7 @@ function SuppliersPage({ products = [] }) {
             </button>
           </div>
         </form>
-      </section>
+      </section>}
 
       <section className="product-list-section">
         <div className="product-list-heading">
@@ -242,6 +242,7 @@ function SuppliersPage({ products = [] }) {
                     onToggle={() => setExpandedSupplierId(expanded ? null : entry.id)}
                     onEdit={() => beginEdit(entry)}
                     onDelete={() => handleDelete(entry)}
+                    canWrite={canWrite}
                   />
                 );
               }) : (
@@ -258,7 +259,7 @@ function SuppliersPage({ products = [] }) {
   );
 }
 
-function SupplierRows({ supplier, expanded, onToggle, onEdit, onDelete }) {
+function SupplierRows({ supplier, expanded, onToggle, onEdit, onDelete, canWrite = true }) {
   return (
     <>
       <tr>
@@ -268,8 +269,8 @@ function SupplierRows({ supplier, expanded, onToggle, onEdit, onDelete }) {
         <td>{supplier.products?.length || 0}</td>
         <td className="table-actions supplier-table-actions">
           <button className="secondary-action" type="button" onClick={onToggle}>{expanded ? 'Hide products' : 'View products'}</button>
-          <button className="icon-button" type="button" onClick={onEdit} aria-label={`Edit ${supplier.name}`}><Pencil size={15} /></button>
-          <button className="icon-button danger" type="button" onClick={onDelete} aria-label={`Delete ${supplier.name}`}><Trash2 size={15} /></button>
+          {canWrite && <button className="icon-button" type="button" onClick={onEdit} aria-label={`Edit ${supplier.name}`}><Pencil size={15} /></button>}
+          {canWrite && <button className="icon-button danger" type="button" onClick={onDelete} aria-label={`Delete ${supplier.name}`}><Trash2 size={15} /></button>}
         </td>
       </tr>
       {expanded && (

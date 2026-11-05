@@ -1,6 +1,8 @@
 import express from 'express';
 import pool from '../config/db.js';
 import { authRequired } from '../middleware/auth.js';
+import { requirePermission } from '../middleware/permissions.js';
+import { logActivity } from '../config/activityLog.js';
 
 const router = express.Router();
 
@@ -45,7 +47,7 @@ function mapOrder(row) {
   };
 }
 
-router.get('/', authRequired, async (req, res) => {
+router.get('/', authRequired, requirePermission('purchaseOrders', 'read'), async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT
@@ -76,7 +78,7 @@ router.get('/', authRequired, async (req, res) => {
   }
 });
 
-router.post('/', authRequired, async (req, res) => {
+router.post('/', authRequired, requirePermission('purchaseOrders', 'write'), async (req, res) => {
   const { supplierId, orderDate, reference, notes } = req.body;
   const items = normalizeItems(req.body.items);
 
@@ -139,6 +141,8 @@ router.post('/', authRequired, async (req, res) => {
 
     await client.query('COMMIT');
 
+    logActivity(req.user.id, req.user, 'create', 'purchaseOrders', `Created purchase order (${items.length} item${items.length === 1 ? '' : 's'}, ₹${totalAmount})`);
+
     const supplierName = supplierId
       ? (await pool.query('SELECT name FROM suppliers WHERE id = $1 AND owner_user_id = $2', [supplierId, req.user.id])).rows[0]?.name || ''
       : '';
@@ -165,7 +169,7 @@ router.post('/', authRequired, async (req, res) => {
   }
 });
 
-router.delete('/:id', authRequired, async (req, res) => {
+router.delete('/:id', authRequired, requirePermission('purchaseOrders', 'write'), async (req, res) => {
   const { id } = req.params;
 
   const client = await pool.connect();
@@ -201,6 +205,7 @@ router.delete('/:id', authRequired, async (req, res) => {
     await client.query('DELETE FROM purchase_orders WHERE id = $1 AND owner_user_id = $2', [id, req.user.id]);
 
     await client.query('COMMIT');
+    logActivity(req.user.id, req.user, 'delete', 'purchaseOrders', `Deleted purchase order #${id}`);
     return res.status(204).send();
   } catch (error) {
     await client.query('ROLLBACK');

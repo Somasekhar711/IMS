@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Check, KeyRound, Save, ShieldQuestion, Sliders, User, X } from 'lucide-react';
+import { Check, Copy, KeyRound, Save, ShieldQuestion, Sliders, User, X } from 'lucide-react';
 import { getSecurityQuestions, updatePassword, updateProfile, updateSecurityQuestion, updateSettings } from '../api';
 import { useSettings } from '../settingsContext';
 
@@ -125,6 +125,11 @@ function SettingsPage({ user, onProfileUpdated }) {
             <label className="field">
               <span>Role</span>
               <input value={user?.role || ''} readOnly />
+            </label>
+            <label className="field">
+              <span>Warehouse ID</span>
+              <div className="input-wrap"><input value={user?.warehouseId || ''} readOnly /><button className="input-action" type="button" onClick={() => navigator.clipboard?.writeText(user?.warehouseId || '').catch(() => {})} aria-label="Copy warehouse ID"><Copy size={15} /></button></div>
+              <small>Share this with employees so they can sign in — alongside the employee ID and password you set for them.</small>
             </label>
             <div className="supplier-form-actions">
               <button className="submit-button product-submit" type="submit"><Save size={15} /> Save profile</button>

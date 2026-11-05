@@ -1,6 +1,7 @@
 import express from 'express';
 import pool from '../config/db.js';
 import { authRequired } from '../middleware/auth.js';
+import { requirePermission } from '../middleware/permissions.js';
 
 const router = express.Router();
 
@@ -14,7 +15,7 @@ function rangeStartDate(range) {
   return date.toISOString().slice(0, 10);
 }
 
-router.get('/summary', authRequired, async (req, res) => {
+router.get('/summary', authRequired, requirePermission('reports', 'read'), async (req, res) => {
   const startDate = rangeStartDate(req.query.range);
 
   try {

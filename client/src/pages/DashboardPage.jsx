@@ -37,24 +37,25 @@ import { StockMovementsPage } from './StockMovementsPage';
 import { ReportsPage } from './ReportsPage';
 import { UsersRolesPage } from './UsersRolesPage';
 import { SettingsPage } from './SettingsPage';
+import { EmployeeAccountPage } from './EmployeeAccountPage';
 import { ProductsListPage } from './ProductsListPage';
 import { InventoryPage } from './InventoryPage';
-import { adjustProductStock, createProduct, deleteProduct as deleteProductRequest, getInventoryMovements, getProducts, updateProduct as updateProductRequest } from '../api';
+import { adjustProductStock, createProduct, deleteProduct as deleteProductRequest, getEmployeePermissions, getInventoryMovements, getProducts, updateProduct as updateProductRequest } from '../api';
 import { SettingsProvider, useSettings } from '../settingsContext';
 
 const navigation = [
   { label: 'Dashboard', icon: LayoutDashboard },
-  { label: 'Products', icon: Package },
-  { label: 'Add Product', icon: Plus, separated: false },
-  { label: 'Inventory', icon: Boxes },
-  { label: 'Categories', icon: Tags },
-  { label: 'Suppliers', icon: Truck, separated: true },
-  { label: 'Customers', icon: Contact },
-  { label: 'Purchase Orders', icon: ClipboardList, separated: true },
-  { label: 'Sales', icon: ShoppingCart },
-  { label: 'Stock Movements', icon: LineChart, separated: true },
-  { label: 'Reports', icon: BarChart3 },
-  { label: 'Users & Roles', icon: UsersRound, separated: true },
+  { label: 'Products', icon: Package, permissionKey: 'products' },
+  { label: 'Add Product', icon: Plus, separated: false, permissionKey: 'products', requiresWrite: true },
+  { label: 'Inventory', icon: Boxes, permissionKey: 'inventory' },
+  { label: 'Categories', icon: Tags, permissionKey: 'categories' },
+  { label: 'Suppliers', icon: Truck, separated: true, permissionKey: 'suppliers' },
+  { label: 'Customers', icon: Contact, permissionKey: 'customers' },
+  { label: 'Purchase Orders', icon: ClipboardList, separated: true, permissionKey: 'purchaseOrders' },
+  { label: 'Sales', icon: ShoppingCart, permissionKey: 'salesOrders' },
+  { label: 'Stock Movements', icon: LineChart, separated: true, permissionKey: 'stockMovements' },
+  { label: 'Reports', icon: BarChart3, permissionKey: 'reports' },
+  { label: 'Users & Roles', icon: UsersRound, separated: true, adminOnly: true },
   { label: 'Settings', icon: SettingsIcon },
 ];
 
@@ -90,6 +91,30 @@ function DashboardContent({ user, onLogout, onProfileUpdated }) {
   const [products, setProducts] = useState([]);
   const [productError, setProductError] = useState('');
   const [recentMovements, setRecentMovements] = useState([]);
+
+  const isEmployee = user?.actorType === 'employee';
+  const [employeePermissions, setEmployeePermissions] = useState(null);
+
+  useEffect(() => {
+    if (!isEmployee) return;
+    getEmployeePermissions()
+      .then((result) => setEmployeePermissions(result.permissions || {}))
+      .catch(() => setEmployeePermissions({}));
+  }, [isEmployee]);
+
+  const permissionLevel = (key) => {
+    if (!isEmployee) return 'write';
+    return employeePermissions?.[key] || 'none';
+  };
+  const canRead = (key) => permissionLevel(key) !== 'none';
+  const canWrite = (key) => permissionLevel(key) === 'write';
+
+  const visibleNavigation = navigation.filter(({ permissionKey, adminOnly, requiresWrite, label }) => {
+    if (adminOnly) return !isEmployee;
+    if (label === 'Settings' || !permissionKey) return true;
+    if (isEmployee && employeePermissions === null) return false;
+    return requiresWrite ? canWrite(permissionKey) : canRead(permissionKey);
+  });
 
   const productCount = products.length;
   const stockUnits = products.reduce((total, product) => total + (Number(product.stockPresent) || 0), 0);
@@ -221,19 +246,19 @@ function DashboardContent({ user, onLogout, onProfileUpdated }) {
       <aside className={`dashboard-sidebar ${isMenuOpen ? 'is-open' : ''}`}>
         <div className="sidebar-brand"><div className="brand-mark"><Package size={18} /></div><span>StockIt</span><button className="drawer-close" onClick={() => setIsMenuOpen(false)} aria-label="Close navigation"><PanelLeftClose size={18} /></button></div>
         <nav className="dashboard-nav" aria-label="Main navigation">
-          {navigation.map(({ label, icon: Icon, separated }) => (
+          {visibleNavigation.map(({ label, icon: Icon, separated }) => (
             <button
               className={`${selectedModule === label ? 'is-active' : ''} ${separated ? 'is-separated' : ''}`}
               key={label}
               onClick={() => openModule(label)}
             >
               <Icon size={17} />
-              <span>{label}</span>
+              <span>{label === 'Settings' && isEmployee ? 'My Account' : label}</span>
               {label === 'Inventory' && inventoryAlerts > 0 && <span className="nav-badge">{inventoryAlerts}</span>}
             </button>
           ))}
         </nav>
-        <div className="sidebar-footer"><div className="avatar">{initials}</div><div><strong>{displayName}</strong><span>{user?.role || 'Administrator'}</span></div><button aria-label="Open settings" onClick={() => openModule('Settings')}><SettingsIcon size={16} /></button></div>
+        <div className="sidebar-footer"><div className="avatar">{initials}</div><div><strong>{displayName}</strong><span>{isEmployee ? `Employee · ${user?.empId}` : (user?.role || 'Administrator')}</span></div><button aria-label="Open settings" onClick={() => openModule('Settings')}><SettingsIcon size={16} /></button></div>
       </aside>
 
       <section className="dashboard-content">
@@ -289,10 +314,10 @@ function DashboardContent({ user, onLogout, onProfileUpdated }) {
               )}
             </div>
             <div className="user-menu">
-              <button className="header-user" onClick={toggleUserMenu} aria-expanded={isUserMenuOpen} aria-haspopup="menu"><CircleUserRound size={28} strokeWidth={1.4} className="header-user__icon" /><span>{user?.role || 'Admin'}</span><ChevronDown size={14} /></button>
+              <button className="header-user" onClick={toggleUserMenu} aria-expanded={isUserMenuOpen} aria-haspopup="menu"><CircleUserRound size={28} strokeWidth={1.4} className="header-user__icon" /><span>{isEmployee ? 'Employee' : (user?.role || 'Admin')}</span><ChevronDown size={14} /></button>
               {isUserMenuOpen && (
                 <div className="user-dropdown" role="menu">
-                  <div className="user-dropdown__identity"><strong>{displayName}</strong><span>{user?.email || 'Account'}</span></div>
+                  <div className="user-dropdown__identity"><strong>{displayName}</strong><span>{isEmployee ? user?.empId : (user?.email || 'Account')}</span></div>
                   <button className="user-dropdown__item" onClick={() => { openModule('Settings'); setIsUserMenuOpen(false); }} role="menuitem"><User size={15} /> View profile</button>
                   <button className="user-dropdown__logout" onClick={onLogout} role="menuitem"><LogOut size={15} /> Logout</button>
                 </div>
@@ -302,18 +327,18 @@ function DashboardContent({ user, onLogout, onProfileUpdated }) {
         </header>
 
   {productError && <div className="dashboard-error">{productError}</div>}
-  {selectedModule === 'Products' ? <ProductsListPage products={products} onUpdateProduct={updateProduct} onDeleteProduct={deleteProduct} onAddProduct={() => openModule('Add Product')} initialSearchTerm={productsSearchTerm} />
+  {selectedModule === 'Products' ? <ProductsListPage products={products} onUpdateProduct={updateProduct} onDeleteProduct={deleteProduct} onAddProduct={() => openModule('Add Product')} initialSearchTerm={productsSearchTerm} canWrite={canWrite('products')} />
     : selectedModule === 'Add Product' ? <AddProductPage products={products} onAddProduct={addProduct} onUpdateProduct={updateProduct} onBack={() => openModule('Products')} />
-    : selectedModule === 'Inventory' ? <InventoryPage products={products} onAdjustStock={adjustStock} />
-    : selectedModule === 'Categories' ? <CategoriesPage products={products} onCategoryChange={refreshProducts} />
-    : selectedModule === 'Suppliers' ? <SuppliersPage products={products} />
-    : selectedModule === 'Customers' ? <CustomersPage />
-    : selectedModule === 'Purchase Orders' ? <PurchaseOrdersPage products={products} onOrdersChanged={refreshStockActivity} />
-    : selectedModule === 'Sales' ? <SalesOrdersPage products={products} onOrdersChanged={refreshStockActivity} />
+    : selectedModule === 'Inventory' ? <InventoryPage products={products} onAdjustStock={adjustStock} canWrite={canWrite('inventory')} />
+    : selectedModule === 'Categories' ? <CategoriesPage products={products} onCategoryChange={refreshProducts} canWrite={canWrite('categories')} />
+    : selectedModule === 'Suppliers' ? <SuppliersPage products={products} canWrite={canWrite('suppliers')} />
+    : selectedModule === 'Customers' ? <CustomersPage canWrite={canWrite('customers')} />
+    : selectedModule === 'Purchase Orders' ? <PurchaseOrdersPage products={products} onOrdersChanged={refreshStockActivity} canWrite={canWrite('purchaseOrders')} />
+    : selectedModule === 'Sales' ? <SalesOrdersPage products={products} onOrdersChanged={refreshStockActivity} canWrite={canWrite('salesOrders')} />
     : selectedModule === 'Stock Movements' ? <StockMovementsPage products={products} />
     : selectedModule === 'Reports' ? <ReportsPage />
     : selectedModule === 'Users & Roles' ? <UsersRolesPage />
-    : selectedModule === 'Settings' ? <SettingsPage user={user} onProfileUpdated={onProfileUpdated} />
+    : selectedModule === 'Settings' ? (isEmployee ? <EmployeeAccountPage user={user} /> : <SettingsPage user={user} onProfileUpdated={onProfileUpdated} />)
     : <div className="dashboard-main">
           <div className="dashboard-intro"><div><p className="eyebrow">{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p><h1>Good morning, {displayName.split(' ')[0]}.</h1><p>Here is what is happening across your inventory today.</p></div><div className="filter-menu"><button className="date-filter" onClick={() => setIsFilterOpen(!isFilterOpen)} aria-expanded={isFilterOpen} aria-haspopup="menu">{dateRange} <ChevronDown size={14} /></button>{isFilterOpen && <div className="filter-options" role="menu"><button onClick={() => { setDateRange('Current stock'); setIsFilterOpen(false); }}>Current stock</button><button onClick={() => { setDateRange('Last 7 days'); setIsFilterOpen(false); }}>Last 7 days</button><button onClick={() => { setDateRange('Last 30 days'); setIsFilterOpen(false); }}>Last 30 days</button></div>}</div></div>
 

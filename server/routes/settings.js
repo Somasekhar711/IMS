@@ -1,6 +1,7 @@
 import express from 'express';
 import pool from '../config/db.js';
 import { authRequired } from '../middleware/auth.js';
+import { requireAdmin } from '../middleware/permissions.js';
 
 const router = express.Router();
 
@@ -26,7 +27,7 @@ router.get('/', authRequired, async (req, res) => {
   }
 });
 
-router.put('/', authRequired, async (req, res) => {
+router.put('/', authRequired, requireAdmin, async (req, res) => {
   const { phone } = req.body;
   const currencySymbol = (req.body.currencySymbol || '₹').toString().trim().slice(0, 5) || '₹';
   const lowStockAlertEnabled = req.body.lowStockAlertEnabled !== false;

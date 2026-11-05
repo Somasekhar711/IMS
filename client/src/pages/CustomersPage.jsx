@@ -12,7 +12,7 @@ const emptyCustomer = {
   notes: '',
 };
 
-function CustomersPage() {
+function CustomersPage({ canWrite = true }) {
   const [customers, setCustomers] = useState([]);
   const [customer, setCustomer] = useState(emptyCustomer);
   const [editingId, setEditingId] = useState(null);
@@ -119,7 +119,7 @@ function CustomersPage() {
         </div>
       </div>
 
-      <section className="product-panel panel supplier-form-panel">
+      {canWrite && <section className="product-panel panel supplier-form-panel">
         <div className="panel-heading">
           <div>
             <p className="eyebrow">Customer details</p>
@@ -170,7 +170,7 @@ function CustomersPage() {
             </button>
           </div>
         </form>
-      </section>
+      </section>}
 
       <section className="product-list-section">
         <div className="product-list-heading">
@@ -187,7 +187,7 @@ function CustomersPage() {
         <div className="product-table-wrap">
           <table className="product-table">
             <thead>
-              <tr><th>Customer</th><th>Contact</th><th>Phone / Email</th><th aria-label="Actions" /></tr>
+              <tr><th>Customer</th><th>Contact</th><th>Phone / Email</th>{canWrite && <th aria-label="Actions" />}</tr>
             </thead>
             <tbody>
               {isLoading ? (
@@ -197,10 +197,10 @@ function CustomersPage() {
                   <td><strong>{entry.name}</strong>{entry.taxId && <small className="supplier-tax-id">Tax ID: {entry.taxId}</small>}</td>
                   <td>{entry.contactPerson || '—'}</td>
                   <td><span>{entry.phone || '—'}</span>{entry.email && <small className="supplier-contact-email">{entry.email}</small>}</td>
-                  <td className="table-actions supplier-table-actions">
+                  {canWrite && <td className="table-actions supplier-table-actions">
                     <button className="icon-button" type="button" onClick={() => beginEdit(entry)} aria-label={`Edit ${entry.name}`}><Pencil size={15} /></button>
                     <button className="icon-button danger" type="button" onClick={() => handleDelete(entry)} aria-label={`Delete ${entry.name}`}><Trash2 size={15} /></button>
-                  </td>
+                  </td>}
                 </tr>
               )) : (
                 <tr><td className="empty-products" colSpan="4">{searchTerm ? 'No customers match your search.' : 'No customers yet. Add your first customer above.'}</td></tr>

@@ -12,6 +12,7 @@ import inventoryMovementRoutes from './routes/inventoryMovements.js';
 import reportRoutes from './routes/reports.js';
 import teamMemberRoutes from './routes/teamMembers.js';
 import settingsRoutes from './routes/settings.js';
+import activityLogRoutes from './routes/activityLogs.js';
 
 dotenv.config();
 
@@ -50,6 +51,7 @@ app.use('/api/inventory-movements', inventoryMovementRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/team-members', teamMemberRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/activity-logs', activityLogRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: 'Not found' });

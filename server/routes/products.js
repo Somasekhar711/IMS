@@ -1,10 +1,12 @@
 import express from 'express';
 import pool from '../config/db.js';
 import { authRequired } from '../middleware/auth.js';
+import { requirePermission } from '../middleware/permissions.js';
+import { logActivity } from '../config/activityLog.js';
 
 const router = express.Router();
 
-router.get('/', authRequired, (req, res) => {
+router.get('/', authRequired, requirePermission('products', 'read'), (req, res) => {
   const search = (req.query.search || '').trim();
 
   let query = `
@@ -62,7 +64,7 @@ router.get('/', authRequired, (req, res) => {
   });
 });
 
-router.post('/', authRequired, async (req, res) => {
+router.post('/', authRequired, requirePermission('products', 'write'), async (req, res) => {
   const {
     hsn,
     itemName,
@@ -98,6 +100,7 @@ router.post('/', authRequired, async (req, res) => {
           [req.user.id, itemCategory.trim()]
         );
         categoryId = insertResult.rows[0].id;
+        logActivity(req.user.id, req.user, 'create', 'categories', `Created category "${itemCategory.trim()}"`);
       }
     }
   } catch (err) {
@@ -130,6 +133,8 @@ router.post('/', authRequired, async (req, res) => {
     const result = await pool.query(sql, values);
     const row = result.rows[0];
 
+    logActivity(req.user.id, req.user, 'create', 'products', `Created product "${row.item_name}" (HSN ${row.hsn})`);
+
     return res.status(201).json({
       id: row.id,
       hsn: row.hsn,
@@ -150,10 +155,10 @@ router.post('/', authRequired, async (req, res) => {
   }
 });
 
-router.delete('/:id', authRequired, (req, res) => {
+router.delete('/:id', authRequired, requirePermission('products', 'write'), (req, res) => {
   const { id } = req.params;
 
-  pool.query('DELETE FROM products WHERE id = $1 AND owner_user_id = $2', [id, req.user.id], (err, result) => {
+  pool.query('DELETE FROM products WHERE id = $1 AND owner_user_id = $2 RETURNING item_name', [id, req.user.id], (err, result) => {
     if (err) {
       console.error('Database error', err);
       return res.status(500).json({ message: 'Server error' });
@@ -163,11 +168,13 @@ router.delete('/:id', authRequired, (req, res) => {
       return res.status(404).json({ message: 'Product not found' });
     }
 
+    logActivity(req.user.id, req.user, 'delete', 'products', `Deleted product "${result.rows[0].item_name}"`);
+
     return res.status(204).send();
   });
 });
 
-router.put('/:id', authRequired, async (req, res) => {
+router.put('/:id', authRequired, requirePermission('products', 'write'), async (req, res) => {
   const { id } = req.params;
   const { itemPrice, itemCategory, gst, discount, mfd, expiryDate, stockUpdatedDate, stockPresent, thresholdStock } = req.body;
 
@@ -187,6 +194,7 @@ router.put('/:id', authRequired, async (req, res) => {
           [req.user.id, itemCategory.trim()]
         );
         categoryId = category.rows[0].id;
+        logActivity(req.user.id, req.user, 'create', 'categories', `Created category "${itemCategory.trim()}"`);
       }
     }
 
@@ -202,6 +210,7 @@ router.put('/:id', authRequired, async (req, res) => {
 
     if (result.rowCount === 0) return res.status(404).json({ message: 'Product not found' });
     const row = result.rows[0];
+    logActivity(req.user.id, req.user, 'update', 'products', `Updated product "${row.item_name}" (HSN ${row.hsn})`);
     return res.json({ id: row.id, hsn: row.hsn, itemName: row.item_name, itemPrice: Number(row.item_price), itemCategory: itemCategory || '', gst: Number(row.gst_percent), discount: Number(row.discount_percent), mfd: row.manufactured_date || '', expiryDate: row.expiry_date || '', stockUpdatedDate: row.stock_updated_date || '', stockPresent: row.stock_present, thresholdStock: row.threshold_stock });
   } catch (err) {
     console.error('Database error', err);
@@ -209,7 +218,7 @@ router.put('/:id', authRequired, async (req, res) => {
   }
 });
 
-router.patch('/:id/stock', authRequired, async (req, res) => {
+router.patch('/:id/stock', authRequired, requirePermission('inventory', 'write'), async (req, res) => {
   const { id } = req.params;
   const stockPresent = Number(req.body.stockPresent);
   const reason = typeof req.body.reason === 'string' ? req.body.reason.trim() : '';
@@ -219,7 +228,7 @@ router.patch('/:id/stock', authRequired, async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    const current = await client.query('SELECT stock_present FROM products WHERE id = $1 AND owner_user_id = $2 FOR UPDATE', [id, req.user.id]);
+    const current = await client.query('SELECT item_name, stock_present FROM products WHERE id = $1 AND owner_user_id = $2 FOR UPDATE', [id, req.user.id]);
     if (current.rowCount === 0) {
       await client.query('ROLLBACK');
       return res.status(404).json({ message: 'Product not found' });
@@ -237,6 +246,11 @@ router.patch('/:id/stock', authRequired, async (req, res) => {
     }
 
     await client.query('COMMIT');
+
+    if (quantityChange !== 0) {
+      logActivity(req.user.id, req.user, 'update', 'inventory', `Adjusted stock for "${current.rows[0].item_name}" (${quantityChange > 0 ? '+' : ''}${quantityChange})`);
+    }
+
     return res.json({ id: result.rows[0].id, stockPresent: result.rows[0].stock_present, stockUpdatedDate: result.rows[0].stock_updated_date });
   } catch (err) {
     await client.query('ROLLBACK');

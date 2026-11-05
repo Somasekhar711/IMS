@@ -1,17 +1,38 @@
+import crypto from 'crypto';
 import express from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import pool from '../config/db.js';
 import { authRequired } from '../middleware/auth.js';
+import { requireAdmin } from '../middleware/permissions.js';
 import { SECURITY_QUESTIONS, normalizeAnswer } from '../config/securityQuestions.js';
 
 const router = express.Router();
+
+function generateWarehouseId() {
+  return 'WH-' + crypto.randomBytes(4).toString('hex').toUpperCase().slice(0, 6);
+}
+
+async function insertUserWithWarehouseId(fields, values, attempt = 0) {
+  const warehouseId = generateWarehouseId();
+  try {
+    return await pool.query(
+      `INSERT INTO users (${fields}, warehouse_id) VALUES (${values.map((_, i) => `$${i + 1}`).join(', ')}, $${values.length + 1}) RETURNING id, full_name, email, role, warehouse_id`,
+      [...values, warehouseId]
+    );
+  } catch (error) {
+    if (error.code === '23505' && error.constraint?.includes('warehouse_id') && attempt < 5) {
+      return insertUserWithWarehouseId(fields, values, attempt + 1);
+    }
+    throw error;
+  }
+}
 
 router.get('/security-questions', (req, res) => {
   return res.json(SECURITY_QUESTIONS);
 });
 
-router.post('/register', (req, res) => {
+router.post('/register', async (req, res) => {
   const { fullName, email, password, securityQuestion, securityAnswer } = req.body;
 
   if (!fullName || !email || !password || !securityQuestion || !securityAnswer) {
@@ -30,48 +51,37 @@ router.post('/register', (req, res) => {
     return res.status(400).json({ message: 'Security answer is too short' });
   }
 
-  pool.query('SELECT id FROM users WHERE email = $1', [email], async (err, result) => {
-    if (err) {
-      console.error('Database error', err);
-      return res.status(500).json({ message: 'Server error' });
-    }
-
-    if (result.rowCount > 0) {
+  try {
+    const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (existing.rowCount > 0) {
       return res.status(409).json({ message: 'Email is already registered' });
     }
 
-    try {
-      const passwordHash = await bcrypt.hash(password, 10);
-      const securityAnswerHash = await bcrypt.hash(normalizeAnswer(securityAnswer), 10);
+    const passwordHash = await bcrypt.hash(password, 10);
+    const securityAnswerHash = await bcrypt.hash(normalizeAnswer(securityAnswer), 10);
 
-      pool.query(
-        'INSERT INTO users (full_name, email, password_hash, role, security_question, security_answer_hash) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, full_name, email, role',
-        [fullName, email, passwordHash, 'admin', securityQuestion, securityAnswerHash],
-        (err, insertResult) => {
-          if (err) {
-            console.error('Database error', err);
-            return res.status(500).json({ message: 'Server error' });
-          }
+    const insertResult = await insertUserWithWarehouseId(
+      'full_name, email, password_hash, role, security_question, security_answer_hash',
+      [fullName, email, passwordHash, 'admin', securityQuestion, securityAnswerHash]
+    );
 
-          const user = insertResult.rows[0];
-          const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, {
-            expiresIn: '7d',
-          });
+    const user = insertResult.rows[0];
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role, actorType: 'admin' }, process.env.JWT_SECRET, {
+      expiresIn: '7d',
+    });
 
-          return res.status(201).json({
-            id: user.id,
-            fullName: user.full_name,
-            email: user.email,
-            role: user.role,
-            token,
-          });
-        }
-      );
-    } catch (error) {
-      console.error('Hash error', error);
-      return res.status(500).json({ message: 'Server error' });
-    }
-  });
+    return res.status(201).json({
+      id: user.id,
+      fullName: user.full_name,
+      email: user.email,
+      role: user.role,
+      warehouseId: user.warehouse_id,
+      token,
+    });
+  } catch (error) {
+    console.error('Register error', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
 });
 
 router.post('/login', (req, res) => {
@@ -81,7 +91,7 @@ router.post('/login', (req, res) => {
     return res.status(400).json({ message: 'Email and password are required' });
   }
 
-  pool.query('SELECT id, full_name, email, password_hash, role FROM users WHERE email = $1', [email], async (err, result) => {
+  pool.query('SELECT id, full_name, email, password_hash, role, warehouse_id FROM users WHERE email = $1', [email], async (err, result) => {
     if (err) {
       console.error('Database error', err);
       return res.status(500).json({ message: 'Server error' });
@@ -99,7 +109,7 @@ router.post('/login', (req, res) => {
         return res.status(401).json({ message: 'Invalid email or password' });
       }
 
-      const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, {
+      const token = jwt.sign({ id: user.id, email: user.email, role: user.role, actorType: 'admin' }, process.env.JWT_SECRET, {
         expiresIn: '7d',
       });
 
@@ -108,6 +118,7 @@ router.post('/login', (req, res) => {
         fullName: user.full_name,
         email: user.email,
         role: user.role,
+        warehouseId: user.warehouse_id,
         token,
       });
     } catch (error) {
@@ -115,6 +126,128 @@ router.post('/login', (req, res) => {
       return res.status(500).json({ message: 'Server error' });
     }
   });
+});
+
+router.post('/employee-login', async (req, res) => {
+  const warehouseId = req.body.warehouseId?.trim();
+  const empId = req.body.empId?.trim();
+  const { password } = req.body;
+
+  if (!warehouseId || !empId || !password) {
+    return res.status(400).json({ message: 'Warehouse ID, employee ID, and password are required' });
+  }
+
+  try {
+    const ownerResult = await pool.query('SELECT id FROM users WHERE warehouse_id = $1', [warehouseId]);
+    if (ownerResult.rowCount === 0) {
+      return res.status(401).json({ message: 'Invalid warehouse ID, employee ID, or password' });
+    }
+
+    const ownerId = ownerResult.rows[0].id;
+
+    const memberResult = await pool.query(
+      'SELECT id, name, status, password_hash, must_change_password FROM team_members WHERE owner_user_id = $1 AND UPPER(emp_id) = UPPER($2)',
+      [ownerId, empId]
+    );
+
+    if (memberResult.rowCount === 0 || !memberResult.rows[0].password_hash) {
+      return res.status(401).json({ message: 'Invalid warehouse ID, employee ID, or password' });
+    }
+
+    const member = memberResult.rows[0];
+
+    if (member.status !== 'active') {
+      return res.status(403).json({ message: 'This account has been disabled' });
+    }
+
+    const match = await bcrypt.compare(password, member.password_hash);
+    if (!match) {
+      return res.status(401).json({ message: 'Invalid warehouse ID, employee ID, or password' });
+    }
+
+    const token = jwt.sign(
+      { id: ownerId, actorType: 'employee', teamMemberId: member.id },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    return res.json({
+      actorType: 'employee',
+      fullName: member.name,
+      empId,
+      warehouseId,
+      mustChangePassword: member.must_change_password,
+      token,
+    });
+  } catch (error) {
+    console.error('Employee login error', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.put('/employee-password', authRequired, async (req, res) => {
+  if (req.user.actorType !== 'employee') {
+    return res.status(403).json({ message: 'Employees only' });
+  }
+
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ message: 'Current and new password are required' });
+  }
+
+  if (newPassword.length < 8) {
+    return res.status(400).json({ message: 'New password must be at least 8 characters' });
+  }
+
+  try {
+    const result = await pool.query(
+      'SELECT password_hash FROM team_members WHERE id = $1 AND owner_user_id = $2',
+      [req.user.teamMemberId, req.user.id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: 'Account not found' });
+    }
+
+    const match = await bcrypt.compare(currentPassword, result.rows[0].password_hash);
+    if (!match) {
+      return res.status(401).json({ message: 'Current password is incorrect' });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await pool.query(
+      'UPDATE team_members SET password_hash = $1, must_change_password = FALSE, updated_at = NOW() WHERE id = $2',
+      [passwordHash, req.user.teamMemberId]
+    );
+
+    return res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Database error', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.get('/employee-permissions', authRequired, async (req, res) => {
+  if (req.user.actorType !== 'employee') {
+    return res.status(403).json({ message: 'Employees only' });
+  }
+
+  try {
+    const result = await pool.query(
+      'SELECT status, permissions FROM team_members WHERE id = $1 AND owner_user_id = $2',
+      [req.user.teamMemberId, req.user.id]
+    );
+
+    if (result.rowCount === 0 || result.rows[0].status !== 'active') {
+      return res.status(403).json({ message: 'Account access has been disabled' });
+    }
+
+    return res.json({ permissions: result.rows[0].permissions || {} });
+  } catch (error) {
+    console.error('Database error', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
 });
 
 router.post('/security-question', async (req, res) => {
@@ -173,7 +306,7 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
-router.put('/profile', authRequired, async (req, res) => {
+router.put('/profile', authRequired, requireAdmin, async (req, res) => {
   const trimmedName = req.body.fullName?.trim();
   if (!trimmedName) {
     return res.status(400).json({ message: 'Full name is required' });
@@ -197,7 +330,7 @@ router.put('/profile', authRequired, async (req, res) => {
   }
 });
 
-router.put('/password', authRequired, async (req, res) => {
+router.put('/password', authRequired, requireAdmin, async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
   if (!currentPassword || !newPassword) {
@@ -229,7 +362,7 @@ router.put('/password', authRequired, async (req, res) => {
   }
 });
 
-router.put('/security-question', authRequired, async (req, res) => {
+router.put('/security-question', authRequired, requireAdmin, async (req, res) => {
   const { currentPassword, securityQuestion, securityAnswer } = req.body;
 
   if (!currentPassword || !securityQuestion || !securityAnswer) {

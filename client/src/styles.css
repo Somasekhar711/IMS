@@ -251,6 +251,28 @@ form { display: grid; gap: 19px; }.field { display: grid; gap: 8px; }.field > sp
 .toggle-switch input:checked ~ .toggle-thumb { transform: translateX(18px); }
 
 .roster-note { margin: -14px 0 25px; padding: 11px 14px; border: 1px solid #dbe1d6; border-radius: 4px; color: #6f7d73; background: #fff; font-size: 11px; line-height: 1.5; }
+.permission-grid__rows { display: grid; gap: 10px; }
+.permission-grid__row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 8px 0; border-bottom: 1px solid #eef0eb; }
+.permission-grid__row:last-child { border-bottom: 0; }
+.permission-grid__row > span { color: #3a4c41; font-size: 11px; font-weight: 600; }
+.permission-grid__options { display: flex; gap: 6px; }
+.permission-chip { display: flex; align-items: center; gap: 0; padding: 6px 11px; border: 1px solid #dbe1d6; border-radius: 20px; color: #6f7d73; background: #fff; font-size: 10px; font-weight: 600; cursor: pointer; }
+.permission-chip input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.permission-chip.is-active { border-color: #3c7564; color: #173f38; background: #e5f2df; }
+.temp-password-modal { width: min(100%, 420px); padding: 25px; }
+.temp-password-modal p { margin: 16px 0 0; color: #6f7d73; font-size: 11px; line-height: 1.6; }
+.temp-password-box { display: grid; gap: 12px; margin: 18px 0; padding: 16px; border: 1px solid #dbe1d6; border-radius: 4px; background: #f7f9f4; }
+.temp-password-box small { display: block; margin-bottom: 3px; color: #8a958c; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; }
+.temp-password-box strong { font-family: 'Space Grotesk', sans-serif; font-size: 15px; letter-spacing: .02em; color: #20352b; }
+.activity-log-panel { margin-top: 20px; }
+.activity-log-list { display: grid; gap: 2px; margin-top: 18px; }
+.activity-log-list li { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid #eef0eb; }
+.activity-log-list li:last-child { border-bottom: 0; }
+.activity-log-copy { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.activity-log-copy strong { overflow: hidden; color: #344a3d; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.activity-log-copy span { overflow: hidden; color: #8a958c; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.activity-log-list time { flex: 0 0 auto; color: #a2aaa3; font-size: 9px; white-space: nowrap; }
+.empty-hint { color: #9aa49c; font-size: 11px; }
 
 @media (max-width: 900px) { .order-item-row { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 700px) { .settings-grid { grid-template-columns: 1fr; } }

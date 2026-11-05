@@ -6,7 +6,7 @@ import { useSettings } from '../settingsContext';
 const emptyLine = { productId: '', quantity: '', unitPrice: '' };
 const today = () => new Date().toISOString().slice(0, 10);
 
-function SalesOrdersPage({ products = [], onOrdersChanged }) {
+function SalesOrdersPage({ products = [], onOrdersChanged, canWrite = true }) {
   const { currencySymbol } = useSettings();
   const [orders, setOrders] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -125,7 +125,7 @@ function SalesOrdersPage({ products = [], onOrdersChanged }) {
         </div>
       </div>
 
-      <section className="product-panel panel supplier-form-panel">
+      {canWrite && <section className="product-panel panel supplier-form-panel">
         <div className="panel-heading">
           <div>
             <p className="eyebrow">New sale</p>
@@ -201,7 +201,7 @@ function SalesOrdersPage({ products = [], onOrdersChanged }) {
             </button>
           </div>
         </form>
-      </section>
+      </section>}
 
       <section className="product-list-section">
         <div className="product-list-heading">
@@ -234,6 +234,7 @@ function SalesOrdersPage({ products = [], onOrdersChanged }) {
                     counterpartyLabel={order.customerName || 'Walk-in'}
                     onToggle={() => setExpandedOrderId(expanded ? null : order.id)}
                     onDelete={() => handleDelete(order)}
+                    canWrite={canWrite}
                   />
                 );
               }) : (
@@ -250,7 +251,7 @@ function SalesOrdersPage({ products = [], onOrdersChanged }) {
   );
 }
 
-function OrderRows({ order, expanded, currencySymbol, counterpartyLabel, onToggle, onDelete }) {
+function OrderRows({ order, expanded, currencySymbol, counterpartyLabel, onToggle, onDelete, canWrite = true }) {
   return (
     <>
       <tr>
@@ -261,7 +262,7 @@ function OrderRows({ order, expanded, currencySymbol, counterpartyLabel, onToggl
         <td><strong>{currencySymbol}{order.totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong></td>
         <td className="table-actions supplier-table-actions">
           <button className="secondary-action" type="button" onClick={onToggle}>{expanded ? 'Hide items' : 'View items'}</button>
-          <button className="icon-button danger" type="button" onClick={onDelete} aria-label={`Delete order ${order.reference || order.id}`}><Trash2 size={15} /></button>
+          {canWrite && <button className="icon-button danger" type="button" onClick={onDelete} aria-label={`Delete order ${order.reference || order.id}`}><Trash2 size={15} /></button>}
         </td>
       </tr>
       {expanded && (

@@ -1,6 +1,8 @@
 import express from 'express';
 import pool from '../config/db.js';
 import { authRequired } from '../middleware/auth.js';
+import { requirePermission } from '../middleware/permissions.js';
+import { logActivity } from '../config/activityLog.js';
 
 const router = express.Router();
 
@@ -22,7 +24,7 @@ async function ensureProductsBelongToUser(client, productIds, userId) {
   return Number(result.rows[0].count) === productIds.length;
 }
 
-router.get('/', authRequired, async (req, res) => {
+router.get('/', authRequired, requirePermission('suppliers', 'read'), async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT
@@ -66,7 +68,7 @@ router.get('/', authRequired, async (req, res) => {
   }
 });
 
-router.post('/', authRequired, async (req, res) => {
+router.post('/', authRequired, requirePermission('suppliers', 'write'), async (req, res) => {
   const { name, contactPerson, phone, email, address, taxId, notes } = req.body;
   const trimmedName = name?.trim();
   const productIds = normalizeProductIds(req.body.productIds ?? []);
@@ -100,6 +102,7 @@ router.post('/', authRequired, async (req, res) => {
     }
 
     await client.query('COMMIT');
+    logActivity(req.user.id, req.user, 'create', 'suppliers', `Added supplier "${supplier.name}"`);
     return res.status(201).json({
       id: supplier.id,
       name: supplier.name,
@@ -122,7 +125,7 @@ router.post('/', authRequired, async (req, res) => {
   }
 });
 
-router.put('/:id', authRequired, async (req, res) => {
+router.put('/:id', authRequired, requirePermission('suppliers', 'write'), async (req, res) => {
   const { id } = req.params;
   const { name, contactPerson, phone, email, address, taxId, notes } = req.body;
   const trimmedName = name?.trim();
@@ -165,6 +168,7 @@ router.put('/:id', authRequired, async (req, res) => {
 
     await client.query('COMMIT');
     const supplier = result.rows[0];
+    logActivity(req.user.id, req.user, 'update', 'suppliers', `Updated supplier "${supplier.name}"`);
     return res.json({
       id: supplier.id,
       name: supplier.name,
@@ -187,9 +191,9 @@ router.put('/:id', authRequired, async (req, res) => {
   }
 });
 
-router.delete('/:id', authRequired, async (req, res) => {
+router.delete('/:id', authRequired, requirePermission('suppliers', 'write'), async (req, res) => {
   try {
-    const supplier = await pool.query('SELECT id FROM suppliers WHERE id = $1 AND owner_user_id = $2', [req.params.id, req.user.id]);
+    const supplier = await pool.query('SELECT id, name FROM suppliers WHERE id = $1 AND owner_user_id = $2', [req.params.id, req.user.id]);
     if (supplier.rowCount === 0) return res.status(404).json({ message: 'Supplier not found' });
 
     const productCount = await pool.query(
@@ -204,6 +208,7 @@ router.delete('/:id', authRequired, async (req, res) => {
     }
 
     await pool.query('DELETE FROM suppliers WHERE id = $1 AND owner_user_id = $2', [req.params.id, req.user.id]);
+    logActivity(req.user.id, req.user, 'delete', 'suppliers', `Deleted supplier "${supplier.rows[0].name}"`);
     return res.status(204).send();
   } catch (error) {
     console.error('Database error', error);

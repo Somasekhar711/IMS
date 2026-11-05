@@ -61,6 +61,24 @@ export function resetPasswordWithSecurityAnswer(email, securityAnswer, newPasswo
   });
 }
 
+export function employeeLogin(warehouseId, empId, password) {
+  return request('/auth/employee-login', {
+    method: 'POST',
+    body: JSON.stringify({ warehouseId, empId, password }),
+  });
+}
+
+export function updateEmployeePassword(currentPassword, newPassword) {
+  return request('/auth/employee-password', {
+    method: 'PUT',
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}
+
+export function getEmployeePermissions() {
+  return request('/auth/employee-permissions');
+}
+
 export function getProducts(search = '') {
   const query = search ? `?search=${encodeURIComponent(search)}` : '';
   return request(`/products${query}`);
@@ -233,6 +251,20 @@ export function deleteTeamMember(id) {
   return request(`/team-members/${id}`, {
     method: 'DELETE',
   });
+}
+
+export function resetTeamMemberPassword(id, member) {
+  return request(`/team-members/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ ...member, resetPassword: true }),
+  });
+}
+
+export function getActivityLog(params = {}) {
+  const query = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== '')
+  ).toString();
+  return request(`/activity-logs${query ? `?${query}` : ''}`);
 }
 
 export function getSettings() {

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Check, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import { createCategory, deleteCategory, getCategories, updateCategory } from '../api';
 
-function CategoriesPage({ products = [], onCategoryChange }) {
+function CategoriesPage({ products = [], onCategoryChange, canWrite = true }) {
   const [categories, setCategories] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [name, setName] = useState('');
@@ -131,7 +131,7 @@ function CategoriesPage({ products = [], onCategoryChange }) {
         </div>
       </div>
 
-      <section className="product-panel panel">
+      {canWrite && <section className="product-panel panel">
         <div className="panel-heading">
           <div>
             <p className="eyebrow">Taxonomy</p>
@@ -171,7 +171,7 @@ function CategoriesPage({ products = [], onCategoryChange }) {
             </button>
           </div>
         </form>
-      </section>
+      </section>}
 
       <section className="product-list-section">
         <div className="product-list-heading">
@@ -216,12 +216,12 @@ function CategoriesPage({ products = [], onCategoryChange }) {
                           <button className="secondary-action" type="button" onClick={() => setExpandedCategoryId(isExpanded ? null : category.id)}>
                             {isExpanded ? 'Hide products' : 'View products'}
                           </button>
-                          <button className="icon-button" onClick={() => handleEdit(category)} aria-label={`Edit ${category.name}`}>
+                          {canWrite && <button className="icon-button" onClick={() => handleEdit(category)} aria-label={`Edit ${category.name}`}>
                             <Pencil size={15} />
-                          </button>
-                          <button className="icon-button danger" onClick={() => handleDelete(category.id)} aria-label={`Delete ${category.name}`}>
+                          </button>}
+                          {canWrite && <button className="icon-button danger" onClick={() => handleDelete(category.id)} aria-label={`Delete ${category.name}`}>
                             <Trash2 size={15} />
-                          </button>
+                          </button>}
                         </td>
                       </tr>
                       {isExpanded && (

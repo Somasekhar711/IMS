@@ -1,10 +1,11 @@
 import express from 'express';
 import pool from '../config/db.js';
 import { authRequired } from '../middleware/auth.js';
+import { requirePermission } from '../middleware/permissions.js';
 
 const router = express.Router();
 
-router.get('/', authRequired, async (req, res) => {
+router.get('/', authRequired, requirePermission('stockMovements', 'read'), async (req, res) => {
   const { productId, type } = req.query;
   const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 500);
 

@@ -1,10 +1,12 @@
 import express from 'express';
 import pool from '../config/db.js';
 import { authRequired } from '../middleware/auth.js';
+import { requirePermission } from '../middleware/permissions.js';
+import { logActivity } from '../config/activityLog.js';
 
 const router = express.Router();
 
-router.get('/', authRequired, (req, res) => {
+router.get('/', authRequired, requirePermission('categories', 'read'), (req, res) => {
   const search = (req.query.search || '').trim();
 
   let query = `
@@ -44,7 +46,7 @@ router.get('/', authRequired, (req, res) => {
   });
 });
 
-router.post('/', authRequired, async (req, res) => {
+router.post('/', authRequired, requirePermission('categories', 'write'), async (req, res) => {
   const { name, description } = req.body;
   const trimmedName = name?.trim();
 
@@ -68,6 +70,7 @@ router.post('/', authRequired, async (req, res) => {
     );
 
     const row = result.rows[0];
+    logActivity(req.user.id, req.user, 'create', 'categories', `Created category "${row.name}"`);
     return res.status(201).json({
       id: row.id,
       name: row.name,
@@ -81,7 +84,7 @@ router.post('/', authRequired, async (req, res) => {
   }
 });
 
-router.put('/:id', authRequired, async (req, res) => {
+router.put('/:id', authRequired, requirePermission('categories', 'write'), async (req, res) => {
   const { id } = req.params;
   const trimmedName = req.body.name?.trim();
 
@@ -109,6 +112,7 @@ router.put('/:id', authRequired, async (req, res) => {
     }
 
     const row = result.rows[0];
+    logActivity(req.user.id, req.user, 'update', 'categories', `Updated category "${row.name}"`);
     return res.json({
       id: row.id,
       name: row.name,
@@ -122,11 +126,11 @@ router.put('/:id', authRequired, async (req, res) => {
   }
 });
 
-router.delete('/:id', authRequired, async (req, res) => {
+router.delete('/:id', authRequired, requirePermission('categories', 'write'), async (req, res) => {
   const { id } = req.params;
 
   try {
-    const category = await pool.query('SELECT id FROM categories WHERE id = $1 AND owner_user_id = $2', [id, req.user.id]);
+    const category = await pool.query('SELECT id, name FROM categories WHERE id = $1 AND owner_user_id = $2', [id, req.user.id]);
     if (category.rowCount === 0) {
       return res.status(404).json({ message: 'Category not found' });
     }
@@ -144,6 +148,8 @@ router.delete('/:id', authRequired, async (req, res) => {
     }
 
     await pool.query('DELETE FROM categories WHERE id = $1 AND owner_user_id = $2', [id, req.user.id]);
+
+    logActivity(req.user.id, req.user, 'delete', 'categories', `Deleted category "${category.rows[0].name}"`);
 
     return res.status(204).send();
   } catch (err) {

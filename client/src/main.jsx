@@ -4,8 +4,10 @@ import { createRoot } from 'react-dom/client';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { EmployeeLoginPage } from './pages/EmployeeLoginPage';
+import { ForceEmployeePasswordChange } from './pages/ForceEmployeePasswordChange';
 import { DashboardPage } from './pages/DashboardPage';
-import { login, register } from './api';
+import { login, register, employeeLogin } from './api';
 import './styles.css';
 
 function App() {
@@ -18,6 +20,7 @@ function App() {
       return null;
     }
   });
+  const [pendingEmployeeChange, setPendingEmployeeChange] = useState(null);
   const [authError, setAuthError] = useState('');
 
   const switchMode = (nextView) => {
@@ -25,12 +28,16 @@ function App() {
     setAuthError('');
   };
 
+  const persistSession = (user) => {
+    localStorage.setItem('stockit_token', user.token);
+    localStorage.setItem('stockit_user', JSON.stringify(user));
+    setCurrentUser(user);
+  };
+
   const handleLogin = async (email, password) => {
     try {
       const user = await login(email, password);
-      localStorage.setItem('stockit_token', user.token);
-      localStorage.setItem('stockit_user', JSON.stringify(user));
-      setCurrentUser(user);
+      persistSession(user);
       setIsLoggedIn(true);
       setAuthError('');
     } catch (error) {
@@ -41,14 +48,37 @@ function App() {
   const handleRegister = async (fullName, email, password, securityQuestion, securityAnswer) => {
     try {
       const user = await register(fullName, email, password, securityQuestion, securityAnswer);
-      localStorage.setItem('stockit_token', user.token);
-      localStorage.setItem('stockit_user', JSON.stringify(user));
-      setCurrentUser(user);
+      persistSession(user);
       setIsLoggedIn(true);
       setAuthError('');
     } catch (error) {
       setAuthError(error.message || 'Registration failed');
     }
+  };
+
+  const handleEmployeeLogin = async (warehouseId, empId, password) => {
+    try {
+      const user = await employeeLogin(warehouseId, empId, password);
+      persistSession(user);
+      setAuthError('');
+      if (user.mustChangePassword) {
+        setPendingEmployeeChange({ tempPassword: password });
+      } else {
+        setIsLoggedIn(true);
+      }
+    } catch (error) {
+      setAuthError(error.message || 'Login failed');
+    }
+  };
+
+  const handleEmployeePasswordChanged = () => {
+    setCurrentUser((current) => {
+      const next = { ...current, mustChangePassword: false };
+      localStorage.setItem('stockit_user', JSON.stringify(next));
+      return next;
+    });
+    setPendingEmployeeChange(null);
+    setIsLoggedIn(true);
   };
 
   const handleLogout = () => {
@@ -105,8 +135,12 @@ function App() {
         <div className="form-panel__inner">
           <div className="mobile-brand"><div className="brand-mark"><Package size={18} /></div><span>StockIt</span></div>
 
-          {authView === 'forgot' ? (
+          {pendingEmployeeChange ? (
+            <ForceEmployeePasswordChange tempPassword={pendingEmployeeChange.tempPassword} onChanged={handleEmployeePasswordChanged} />
+          ) : authView === 'forgot' ? (
             <ForgotPasswordPage onBackToLogin={() => switchMode('login')} />
+          ) : authView === 'employee' ? (
+            <EmployeeLoginPage onLogin={handleEmployeeLogin} onBackToLogin={() => switchMode('login')} error={authError} />
           ) : (
             <>
               <div className="mode-switch" role="tablist" aria-label="Authentication mode">
@@ -121,6 +155,7 @@ function App() {
               )}
 
               <p className="mode-prompt">{authView === 'register' ? 'Already have an account?' : 'New to StockIt?'} <button onClick={() => switchMode(authView === 'register' ? 'login' : 'register')}>{authView === 'register' ? 'Sign in' : 'Create an account'}</button></p>
+              <p className="mode-prompt"><button type="button" onClick={() => switchMode('employee')}>Sign in as an employee</button></p>
             </>
           )}
 

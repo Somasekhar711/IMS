@@ -150,6 +150,7 @@ router.post('/', authRequired, requirePermission('products', 'write'), async (re
       thresholdStock: row.threshold_stock,
     });
   } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ message: 'A product with this HSN already exists' });
     console.error('Database error', err);
     return res.status(500).json({ message: 'Server error' });
   }

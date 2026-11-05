@@ -3,7 +3,13 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const { Pool } = pg;
+const { Pool, types } = pg;
+
+// Postgres DATE columns default to parsing into JS Date objects, which then
+// serialize to a full UTC ISO timestamp (shifted by the server's timezone)
+// instead of the plain YYYY-MM-DD the column actually holds. Keep them as
+// the raw string Postgres sends back.
+types.setTypeParser(types.builtins.DATE, (value) => value);
 
 const pool = new Pool(process.env.DATABASE_URL ? {
   connectionString: process.env.DATABASE_URL,

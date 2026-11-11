@@ -93,6 +93,7 @@ function DashboardContent({ user, onLogout, onProfileUpdated }) {
   const [recentMovements, setRecentMovements] = useState([]);
 
   const isEmployee = user?.actorType === 'employee';
+  const teamLabel = user?.role === 'manager' || user?.role === 'admin' ? 'Manager' : 'Employee';
   const [employeePermissions, setEmployeePermissions] = useState(null);
 
   useEffect(() => {
@@ -258,7 +259,7 @@ function DashboardContent({ user, onLogout, onProfileUpdated }) {
             </button>
           ))}
         </nav>
-        <div className="sidebar-footer"><div className="avatar">{initials}</div><div><strong>{displayName}</strong><span>{isEmployee ? `Employee · ${user?.empId}` : (user?.role || 'Administrator')}</span></div><button aria-label="Open settings" onClick={() => openModule('Settings')}><SettingsIcon size={16} /></button></div>
+        <div className="sidebar-footer"><div className="avatar">{initials}</div><div><strong>{displayName}</strong><span>{isEmployee ? `${teamLabel} · ${user?.empId}` : (user?.role || 'Administrator')}</span></div><button aria-label="Open settings" onClick={() => openModule('Settings')}><SettingsIcon size={16} /></button></div>
       </aside>
 
       <section className="dashboard-content">
@@ -314,7 +315,7 @@ function DashboardContent({ user, onLogout, onProfileUpdated }) {
               )}
             </div>
             <div className="user-menu">
-              <button className="header-user" onClick={toggleUserMenu} aria-expanded={isUserMenuOpen} aria-haspopup="menu"><CircleUserRound size={28} strokeWidth={1.4} className="header-user__icon" /><span>{isEmployee ? 'Employee' : (user?.role || 'Admin')}</span><ChevronDown size={14} /></button>
+              <button className="header-user" onClick={toggleUserMenu} aria-expanded={isUserMenuOpen} aria-haspopup="menu"><CircleUserRound size={28} strokeWidth={1.4} className="header-user__icon" /><span>{isEmployee ? teamLabel : (user?.role || 'Admin')}</span><ChevronDown size={14} /></button>
               {isUserMenuOpen && (
                 <div className="user-dropdown" role="menu">
                   <div className="user-dropdown__identity"><strong>{displayName}</strong><span>{isEmployee ? user?.empId : (user?.email || 'Account')}</span></div>

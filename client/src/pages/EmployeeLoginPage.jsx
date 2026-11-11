@@ -1,8 +1,13 @@
 import { useState } from 'react';
-import { ArrowLeft, ArrowRight, Eye, EyeOff, Hash, KeyRound, LockKeyhole } from 'lucide-react';
-import { employeeLogin } from '../api';
+import { ArrowRight, Eye, EyeOff, Hash, KeyRound, LockKeyhole } from 'lucide-react';
 
-export function EmployeeLoginPage({ onLogin, onBackToLogin, error }) {
+const copy = {
+  manager: { title: 'Manager sign in.', idLabel: 'Manager ID', intro: 'Enter the warehouse ID and the manager ID your admin gave you.' },
+  employee: { title: 'Employee sign in.', idLabel: 'Employee ID', intro: 'Enter the warehouse ID and the employee ID your admin gave you.' },
+};
+
+export function EmployeeLoginPage({ portal = 'employee', onLogin, error }) {
+  const text = copy[portal] || copy.employee;
   const [warehouseId, setWarehouseId] = useState('');
   const [empId, setEmpId] = useState('');
   const [password, setPassword] = useState('');
@@ -13,7 +18,7 @@ export function EmployeeLoginPage({ onLogin, onBackToLogin, error }) {
     event.preventDefault();
     setIsSubmitting(true);
     try {
-      await onLogin(warehouseId.trim(), empId.trim(), password);
+      await onLogin(warehouseId.trim(), empId.trim(), password, portal);
     } finally {
       setIsSubmitting(false);
     }
@@ -23,8 +28,8 @@ export function EmployeeLoginPage({ onLogin, onBackToLogin, error }) {
     <>
       <div className="form-heading">
         <p className="eyebrow">Team access</p>
-        <h2>Employee sign in.</h2>
-        <p>Enter the warehouse ID and employee ID your admin gave you.</p>
+        <h2>{text.title}</h2>
+        <p>{text.intro}</p>
       </div>
 
       {error && <div className="auth-error">{error}</div>}
@@ -35,8 +40,8 @@ export function EmployeeLoginPage({ onLogin, onBackToLogin, error }) {
           <div className="input-wrap"><Hash size={18} /><input type="text" value={warehouseId} onChange={(event) => setWarehouseId(event.target.value)} placeholder="WH-XXXXXX" autoComplete="off" required /></div>
         </label>
         <label className="field">
-          <span>Employee ID</span>
-          <div className="input-wrap"><KeyRound size={18} /><input type="text" value={empId} onChange={(event) => setEmpId(event.target.value)} placeholder="EMP001" autoComplete="off" required /></div>
+          <span>{text.idLabel}</span>
+          <div className="input-wrap"><KeyRound size={18} /><input type="text" value={empId} onChange={(event) => setEmpId(event.target.value)} placeholder={portal === 'manager' ? 'MGR001' : 'EMP001'} autoComplete="off" required /></div>
         </label>
         <label className="field">
           <span>Password</span>
@@ -45,7 +50,6 @@ export function EmployeeLoginPage({ onLogin, onBackToLogin, error }) {
         <button className="submit-button" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Signing in...' : 'Sign in'} <ArrowRight size={18} /></button>
       </form>
 
-      <p className="mode-prompt"><button type="button" onClick={onBackToLogin}><ArrowLeft size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />Back to sign in</button></p>
     </>
   );
 }

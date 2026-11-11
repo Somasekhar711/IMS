@@ -311,3 +311,17 @@ form { display: grid; gap: 19px; }.field { display: grid; gap: 8px; }.field > sp
 /* The security-question dropdown should look like the inputs around it. */
 .input-wrap select { height: 100%; padding: 0; cursor: pointer; text-overflow: ellipsis; }
 
+/* ---- Sign-in role tabs: Admin / Manager / Employee / Create account ---- */
+.mode-switch { max-width: 100%; }
+.mode-switch button { white-space: nowrap; }
+@media (max-width: 430px) { .mode-switch { display: flex; width: 100%; } .mode-switch button { flex: 1 1 auto; padding: 10px 8px; font-size: 11.5px; } }
+
+/* ---- Reports: clickable stock cards and their item lists ---- */
+.summary-card.is-static:hover { transform: none; border-color: #e0e5db; box-shadow: 0 5px 16px rgba(25,55,40,.025); }
+button.summary-card { cursor: pointer; font: inherit; }
+.summary-card.is-active { border-color: #9fc36a; box-shadow: 0 0 0 3px rgba(159,195,106,.22); }
+.report-stock-list { margin-top: 22px; scroll-margin-top: 90px; }
+.report-stock-list .product-list-heading { align-items: center; }
+.report-stock-list .stock-status { font-size: 11px; }
+
+.auth-error + form { margin-top: 18px; }

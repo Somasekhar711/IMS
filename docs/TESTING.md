@@ -2,15 +2,15 @@
 
 This document is the test plan, test-case catalogue and test report for StockIt, the inventory management system in this repository (React client, Express API, PostgreSQL).
 
-**Summary:** 157 automated tests across four levels, all passing. Testing found five defects in the server, all fixed and re-tested.
+**Summary:** 166 automated tests across four levels, all passing. Testing found five defects in the server, all fixed and re-tested.
 
 | Level | Tool | Test cases | Test runs | Result |
 |---|---|---|---|---|
 | Unit | Jest | 27 | 27 | All pass |
-| Integration (API) | Jest + Supertest | 84 | 101 | All pass |
-| System (browser) | Selenium WebDriver | 20 | 20 | All pass |
+| Integration (API) | Jest + Supertest | 91 | 108 | All pass |
+| System (browser) | Selenium WebDriver | 22 | 22 | All pass |
 | Black-box API | JUnit 5 | 9 | 9 | All pass |
-| **Total** | | **140** | **157** | **All pass** |
+| **Total** | | **149** | **166** | **All pass** |
 
 A test case that is run with several inputs (for example IT-31, five kinds of invalid product data) counts as one case and several runs.
 
@@ -67,11 +67,11 @@ cd ../e2e && npm install
 
 | Folder | Command | What it runs |
 |---|---|---|
-| `server` | `npm test` | All 128 Jest tests (unit + integration) |
+| `server` | `npm test` | All 135 Jest tests (unit + integration) |
 | `server` | `npm run test:unit` | Unit tests only |
 | `server` | `npm run test:api` | Integration tests only |
 | `server` | `npm run test:coverage` | All Jest tests plus a coverage report (`server/tests/coverage/index.html`) |
-| `e2e` | `npm test` | 20 Selenium tests, browser hidden (headless) |
+| `e2e` | `npm test` | 22 Selenium tests, browser hidden (headless) |
 | `e2e` | `npm run test:headed` | The same tests with the browser window visible and slowed down, for a demo |
 | `e2e` | `npm run test:junit` | Compiles and runs the 9 JUnit 5 tests |
 | `e2e` | `npm run stack` | Starts the whole app on an empty database at http://localhost:5174 for manual testing |
@@ -91,7 +91,7 @@ Notes:
 | Security testing | Missing and tampered tokens (IT-19, IT-20, UT-14 to UT-17); SQL-injection input (IT-18); cross-account access (IT-42, IT-43, IT-56); password hashes never returned (IT-05, IT-72) |
 | State-based testing | Purchase, then sale, then delete, with stock checked after each step (IT-53, IT-57, IT-65, IT-66) |
 | Transaction testing | A failing line rolls back the whole order (IT-62) |
-| Role-based testing | The same request as admin and as an employee with none / read / write permission (IT-75 to IT-83) |
+| Role-based testing | The same request as admin and as an employee with none / read / write permission (IT-75 to IT-83); Manager and Employee sign-in tabs (IT-85 to IT-89, ST-22) |
 | Regression testing | The whole suite is re-run after every fix |
 
 ## 7. Detailed sample test cases
@@ -119,8 +119,8 @@ Notes:
 
 | Suite | Runs | Passed | Failed | Time |
 |---|---|---|---|---|
-| Jest (unit + integration) | 128 | 128 | 0 | about 11 s |
-| Selenium WebDriver | 20 | 20 | 0 | about 23 s |
+| Jest (unit + integration) | 135 | 135 | 0 | about 12 s |
+| Selenium WebDriver | 22 | 22 | 0 | about 26 s |
 | JUnit 5 | 9 | 9 | 0 | about 1 s (plus start-up) |
 
 ### Coverage of the server code (Jest)
@@ -146,7 +146,7 @@ The first full run had 14 failing test runs. They traced to five defects:
 | D4 | Password strength rules (capital letter, number, special character) existed only in the browser | IT-09 | High | The API accepted `password` as a password | `server/config/passwordPolicy.js`, used for registration, reset and both password-change routes |
 | D5 | Emails were compared case-sensitively | IT-12, IT-14 | Medium | `A@x.com` and `a@x.com` could both register; login failed if the case differed | Emails are stored in lower case and compared with `LOWER(email)` |
 
-After the fixes the full suite was re-run: 157 of 157 pass.
+After the fixes the full suite was re-run and passed. The suite has since grown to 166 tests (role-specific sign-in tabs and report stock lists), all passing.
 
 ## 9. Test-case catalogue
 
@@ -272,6 +272,13 @@ Every automated test carries its ID in its name, so this list, the test code and
 | IT-82 | employee accounts and per-module permissions | Permission changes by the admin apply immediately to an existing session | `employees.test.js` | Pass |
 | IT-83 | employee accounts and per-module permissions | A disabled employee is locked out, even with a still-valid token | `employees.test.js` | Pass |
 | IT-84 | employee accounts and per-module permissions | An employee of one warehouse cannot log into another warehouse | `employees.test.js` | Pass |
+| IT-85 | role-specific sign-in tabs (Manager / Employee) | A manager signs in from the Manager tab and the response says "manager" | `employees.test.js` | Pass |
+| IT-86 | role-specific sign-in tabs (Manager / Employee) | Staff cannot sign in from the Manager tab | `employees.test.js` | Pass |
+| IT-87 | role-specific sign-in tabs (Manager / Employee) | A manager is pointed to the Manager tab when using the Employee tab | `employees.test.js` | Pass |
+| IT-88 | role-specific sign-in tabs (Manager / Employee) | A wrong password on the wrong tab still says only "invalid" (no role is revealed) | `employees.test.js` | Pass |
+| IT-89 | role-specific sign-in tabs (Manager / Employee) | An unknown tab value is rejected | `employees.test.js` | Pass |
+| IT-90 | report lists the products behind the stock counts | Low stock lists items above zero and at or below their threshold (boundary: 10 of 10) | `orders.test.js` | Pass |
+| IT-91 | report lists the products behind the stock counts | Out of stock lists only items with zero stock, matching the count | `orders.test.js` | Pass |
 
 ### System tests (Selenium WebDriver)
 
@@ -297,6 +304,8 @@ Every automated test carries its ID in its name, so this list, the test code and
 | ST-18 | product, inventory and sales workflow | Selling more than is in stock is refused | `inventory.e2e.test.js` | Pass |
 | ST-19 | product, inventory and sales workflow | The stock movements ledger lists the adjustment and the sale | `inventory.e2e.test.js` | Pass |
 | ST-20 | product, inventory and sales workflow | The dashboard summary reflects the catalogue | `inventory.e2e.test.js` | Pass |
+| ST-21 | product, inventory and sales workflow | Clicking the Low stock and Out of stock report cards lists those products | `inventory.e2e.test.js` | Pass |
+| ST-22 | sign-up, sign-in and password recovery | A manager signs in from the Manager tab at the top; staff are sent to the Employee tab | `auth.e2e.test.js` | Pass |
 
 ### Black-box API tests (JUnit 5)
 

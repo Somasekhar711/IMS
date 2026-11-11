@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from '@jest/globals';
 import {
   By, buildDriver, openFresh, waitForText, textIsAbsent, find, field, type, click, choose, textOf, button, placeholder,
-  openModule, signIn, createAccount, screenshot,
+  openModule, signIn, createAccount, screenshot, apiCall,
 } from '../helpers/driver.js';
 
 // Reads the "Current stock" cell for a product on the Inventory page.
@@ -11,9 +11,10 @@ async function currentStock(driver, productName) {
 
 describe('Selenium: product, inventory and sales workflow', () => {
   let driver;
+  let account;
 
   beforeAll(async () => {
-    const account = await createAccount({ fullName: 'Store Owner' });
+    account = await createAccount({ fullName: 'Store Owner' });
     driver = await buildDriver();
     await openFresh(driver);
     await signIn(driver, account.email, account.password);
@@ -128,5 +129,28 @@ describe('Selenium: product, inventory and sales workflow', () => {
     await openModule(driver, 'Dashboard');
     await waitForText(driver, 'Stock units');
     await screenshot(driver, 'ST-20-dashboard');
+  });
+
+  test('ST-21 clicking the Low stock and Out of stock report cards lists those products', async () => {
+    await apiCall('POST', '/products', { hsn: 'LOW-1', itemName: 'Paneer 200g', itemPrice: 95, stockPresent: 3, thresholdStock: 10 }, account.token);
+    await apiCall('POST', '/products', { hsn: 'OUT-1', itemName: 'Butter 100g', itemPrice: 58, stockPresent: 0, thresholdStock: 5 }, account.token);
+
+    await openModule(driver, 'Reports');
+    await waitForText(driver, 'Sales, purchases, and stock health at a glance.');
+
+    await click(driver, By.xpath('//button[contains(@class,"summary-card")][.//span[normalize-space()="Low stock"]]'));
+    await waitForText(driver, 'Low stock items (1)');
+    const lowList = await textOf(driver, By.id('report-stock-list'));
+    expect(lowList).toContain('Paneer 200g');
+    expect(lowList).toContain('7 units');
+    expect(lowList).not.toContain('Butter 100g');
+    await screenshot(driver, 'ST-21-low-stock-list');
+
+    await click(driver, By.xpath('//button[contains(@class,"summary-card")][.//span[normalize-space()="Out of stock"]]'));
+    await waitForText(driver, 'Out of stock items (1)');
+    const outList = await textOf(driver, By.id('report-stock-list'));
+    expect(outList).toContain('Butter 100g');
+    expect(outList).not.toContain('Paneer 200g');
+    await screenshot(driver, 'ST-21-out-of-stock-list');
   });
 });

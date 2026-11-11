@@ -153,6 +153,18 @@ export async function createAccount(overrides = {}) {
   return { ...account, ...(await response.json()) };
 }
 
+// Calls the API directly for test set-up (not the behaviour under test).
+export async function apiCall(method, path, body, token) {
+  const response = await fetch(`${API_URL}${path}`, {
+    method,
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(`${method} ${path} failed: ${response.status} ${data.message || ''}`);
+  return data;
+}
+
 // Saves a PNG of the current page as evidence for the test report.
 export async function screenshot(driver, name) {
   fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });

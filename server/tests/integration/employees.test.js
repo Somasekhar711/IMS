@@ -122,3 +122,46 @@ describe('API: employee accounts and per-module permissions', () => {
     expect(res.status).toBe(401);
   });
 });
+
+describe('API: role-specific sign-in tabs (Manager / Employee)', () => {
+  let admin;
+  const passwords = {};
+
+  beforeAll(async () => {
+    admin = await registerAdmin();
+    for (const [name, role, empId] of [['Mona Manager', 'manager', 'MGR001'], ['Sam Staff', 'staff', 'EMP101']]) {
+      const res = await api().post('/api/team-members').set(admin.auth).send({ name, role, status: 'active', enableLogin: true, empId, permissions: { products: 'read' } });
+      passwords[empId] = res.body.tempPassword;
+    }
+  });
+
+  const signIn = (empId, portal, password = passwords[empId]) => api().post('/api/auth/employee-login').send({ warehouseId: admin.warehouseId, empId, password, portal });
+
+  test('IT-85 a manager signs in from the Manager tab and the response says "manager"', async () => {
+    const res = await signIn('MGR001', 'manager');
+    expect(res.status).toBe(200);
+    expect(res.body.role).toBe('manager');
+  });
+
+  test('IT-86 staff cannot sign in from the Manager tab', async () => {
+    const res = await signIn('EMP101', 'manager');
+    expect(res.status).toBe(403);
+    expect(res.body.message).toMatch(/Use the Employee tab/);
+  });
+
+  test('IT-87 a manager is pointed to the Manager tab when using the Employee tab', async () => {
+    const res = await signIn('MGR001', 'employee');
+    expect(res.status).toBe(403);
+    expect(res.body.message).toMatch(/Use the Manager tab/);
+  });
+
+  test('IT-88 a wrong password on the wrong tab still says only "invalid" (no role is revealed)', async () => {
+    const res = await signIn('MGR001', 'employee', 'wrong-password');
+    expect(res.status).toBe(401);
+  });
+
+  test('IT-89 an unknown tab value is rejected', async () => {
+    const res = await signIn('EMP101', 'owner');
+    expect(res.status).toBe(400);
+  });
+});

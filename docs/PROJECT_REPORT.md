@@ -70,7 +70,7 @@ The sprint contents below follow the project's commit history.
 | 2 | 28 Aug – 6 Sep | Working core | Express API and database schema; authentication with JWT; product create, read, update, delete; inventory page with stock adjustment; data isolated per account; review fixes |
 | 3 | 26 Sep – 8 Oct | Business modules | Categories, suppliers, customers; purchase and sales orders that update stock; stock movement ledger; reports; settings; password recovery by security question |
 | 4 | 29 Oct – 5 Nov | Multi-user access | Employee logins with a warehouse ID; per-module permissions; activity log; code audit fixes; date-handling fix |
-| 5 | 6 Nov – 11 Nov | Quality | 157 automated tests with Jest, Selenium and JUnit; five defects found and fixed; test documentation; demo data |
+| 5 | 6 Nov – 11 Nov | Quality | 166 automated tests with Jest, Selenium and JUnit; five defects found and fixed; test documentation; demo data |
 
 **Scrum meetings**
 
@@ -159,8 +159,8 @@ Examples of retrospective outcomes: after Sprint 2, merge conflicts led the team
 | Level | Tool | Tests | What is checked |
 |---|---|---|---|
 | Unit | Jest | 27 | Single functions: password policy, permission rules, token checks |
-| Integration | Jest + Supertest | 101 | Every API route against a real PostgreSQL database |
-| System | Selenium WebDriver | 20 | Complete user journeys in the Microsoft Edge browser |
+| Integration | Jest + Supertest | 108 | Every API route against a real PostgreSQL database |
+| System | Selenium WebDriver | 22 | Complete user journeys in the Microsoft Edge browser |
 | Black-box API | JUnit 5 | 9 | The running system over HTTP from a Java client |
 
 **Techniques used:** equivalence partitioning, boundary value analysis, negative testing, security testing, state-based testing and regression testing.
@@ -178,6 +178,6 @@ Examples of retrospective outcomes: after Sprint 2, merge conflicts led the team
 | ST-17 | Sale through the browser | Sell 5 of 55 using the form | Success message; stock shows 50 | Pass |
 | JU-08 | Stock rule from an outside client | Sale of 4, then of 7, from stock of 10 | First accepted, second refused; stock is 6 | Pass |
 
-**Results.** All 157 tests pass. The tests execute 70% of the server's lines and 86% of its functions. Testing found five defects, all corrected and re-tested: invalid product data and non-numeric IDs caused server errors; a malformed request exposed internal error details; password rules were enforced only in the browser; and email addresses were treated as case-sensitive.
+**Results.** All 166 tests pass. The tests execute 70% of the server's lines and 86% of its functions. Testing found five defects, all corrected and re-tested: invalid product data and non-numeric IDs caused server errors; a malformed request exposed internal error details; password rules were enforced only in the browser; and email addresses were treated as case-sensitive.
 
-The complete list of 140 test cases is in `docs/TESTING.md`.
+The complete list of 149 test cases is in `docs/TESTING.md`.

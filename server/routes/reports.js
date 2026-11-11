@@ -62,6 +62,24 @@ router.get('/summary', authRequired, requirePermission('reports', 'read'), async
       [req.user.id]
     );
 
+    // The products behind the low / out-of-stock counts, so the report can list them.
+    const stockItemsResult = await pool.query(
+      `SELECT p.id, p.item_name, p.hsn, c.name AS category_name, p.stock_present, p.threshold_stock
+       FROM products p
+       LEFT JOIN categories c ON c.id = p.category_id
+       WHERE p.owner_user_id = $1 AND p.stock_present <= p.threshold_stock
+       ORDER BY p.stock_present ASC, LOWER(p.item_name) ASC`,
+      [req.user.id]
+    );
+    const stockItem = (row) => ({
+      id: row.id,
+      itemName: row.item_name,
+      hsn: row.hsn,
+      itemCategory: row.category_name || '',
+      stockPresent: row.stock_present,
+      thresholdStock: row.threshold_stock,
+    });
+
     const movementsResult = await pool.query(
       startDate
         ? 'SELECT COUNT(*)::int AS count FROM inventory_movements WHERE owner_user_id = $1 AND created_at >= $2'
@@ -83,6 +101,8 @@ router.get('/summary', authRequired, requirePermission('reports', 'read'), async
       outOfStockCount: stockResult.rows[0].out_of_stock,
       lowStockCount: stockResult.rows[0].low_stock,
       totalProducts: stockResult.rows[0].total_products,
+      lowStockItems: stockItemsResult.rows.filter((row) => row.stock_present > 0).map(stockItem),
+      outOfStockItems: stockItemsResult.rows.filter((row) => row.stock_present === 0).map(stockItem),
       movementsCount: movementsResult.rows[0].count,
     });
   } catch (error) {

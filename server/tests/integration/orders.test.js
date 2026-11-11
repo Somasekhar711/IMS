@@ -168,3 +168,27 @@ describe('API: purchase then sale (end-to-end stock flow)', () => {
     expect(res.body.lowStockCount).toBe(1);
   });
 });
+
+describe('API: report lists the products behind the stock counts', () => {
+  let admin;
+  beforeAll(async () => {
+    admin = await registerAdmin();
+    await createProduct(admin.auth, { itemName: 'Healthy Item', stockPresent: 50, thresholdStock: 10 });
+    await createProduct(admin.auth, { itemName: 'Low Item', stockPresent: 3, thresholdStock: 10, itemCategory: 'Dairy' });
+    await createProduct(admin.auth, { itemName: 'Edge Item', stockPresent: 10, thresholdStock: 10 });
+    await createProduct(admin.auth, { itemName: 'Empty Item', stockPresent: 0, thresholdStock: 5 });
+  });
+
+  test('IT-90 low stock lists items above zero and at or below their threshold (boundary: 10 of 10)', async () => {
+    const res = await api().get('/api/reports/summary').set(admin.auth);
+    expect(res.body.lowStockItems.map((item) => item.itemName)).toEqual(['Low Item', 'Edge Item']);
+    expect(res.body.lowStockItems[0]).toMatchObject({ itemCategory: 'Dairy', stockPresent: 3, thresholdStock: 10 });
+    expect(res.body.lowStockItems).toHaveLength(res.body.lowStockCount);
+  });
+
+  test('IT-91 out of stock lists only items with zero stock, matching the count', async () => {
+    const res = await api().get('/api/reports/summary').set(admin.auth);
+    expect(res.body.outOfStockItems.map((item) => item.itemName)).toEqual(['Empty Item']);
+    expect(res.body.outOfStockItems).toHaveLength(res.body.outOfStockCount);
+  });
+});

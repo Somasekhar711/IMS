@@ -1,5 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, BarChart3, ChevronDown, DollarSign, Package, ShoppingCart, TrendingUp, X } from 'lucide-react';
+
+// The two stock cards open a list of the products behind their number.
+const stockLists = {
+  low: { title: 'Low stock items', eyebrow: 'Needs reordering', key: 'lowStockItems', empty: 'No products are running low right now.' },
+  out: { title: 'Out of stock items', eyebrow: 'Needs replenishment', key: 'outOfStockItems', empty: 'Nothing is out of stock right now.' },
+};
 import { getReportsSummary } from '../api';
 import { useSettings } from '../settingsContext';
 
@@ -17,6 +23,8 @@ function ReportsPage() {
   const [summary, setSummary] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [stockView, setStockView] = useState(null);
+  const listRef = useRef(null);
 
   useEffect(() => {
     loadSummary();
@@ -41,9 +49,20 @@ function ReportsPage() {
   const statCards = summary ? [
     { label: 'Sales revenue', value: money(summary.salesTotal), detail: `${summary.salesCount} order${summary.salesCount === 1 ? '' : 's'}`, icon: TrendingUp, tone: 'green' },
     { label: 'Purchases cost', value: money(summary.purchasesTotal), detail: `${summary.purchasesCount} order${summary.purchasesCount === 1 ? '' : 's'}`, icon: ShoppingCart, tone: 'blue' },
-    { label: 'Low stock', value: summary.lowStockCount, detail: `of ${summary.totalProducts} products`, icon: AlertTriangle, tone: 'orange' },
-    { label: 'Out of stock', value: summary.outOfStockCount, detail: `of ${summary.totalProducts} products`, icon: Package, tone: 'red' },
+    { label: 'Low stock', value: summary.lowStockCount, detail: `of ${summary.totalProducts} products · view list`, icon: AlertTriangle, tone: 'orange', list: 'low' },
+    { label: 'Out of stock', value: summary.outOfStockCount, detail: `of ${summary.totalProducts} products · view list`, icon: Package, tone: 'red', list: 'out' },
   ] : [];
+
+  const toggleStockView = (list) => {
+    setStockView((current) => (current === list ? null : list));
+  };
+
+  useEffect(() => {
+    if (stockView) listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [stockView]);
+
+  const openList = stockView ? stockLists[stockView] : null;
+  const openItems = openList ? (summary?.[openList.key] || []) : [];
 
   return (
     <div className="product-page dashboard-main">
@@ -66,13 +85,51 @@ function ReportsPage() {
       ) : summary && (
         <>
           <div className="summary-grid">
-            {statCards.map(({ label, value, detail, icon: Icon, tone }) => (
-              <div className="summary-card" key={label}>
-                <div className={`summary-icon ${tone}`}><Icon size={17} /></div>
-                <div className="summary-card__copy"><span>{label}</span><strong>{value}</strong><small>{detail}</small></div>
-              </div>
-            ))}
+            {statCards.map(({ label, value, detail, icon: Icon, tone, list }) => {
+              const content = (
+                <>
+                  <div className={`summary-icon ${tone}`}><Icon size={17} /></div>
+                  <div className="summary-card__copy"><span>{label}</span><strong>{value}</strong><small>{detail}</small></div>
+                </>
+              );
+              return list ? (
+                <button type="button" className={`summary-card ${stockView === list ? 'is-active' : ''}`} key={label} onClick={() => toggleStockView(list)} aria-expanded={stockView === list} aria-controls="report-stock-list">
+                  {content}
+                  <span className="card-arrow">{stockView === list ? '×' : '↘'}</span>
+                </button>
+              ) : (
+                <div className="summary-card is-static" key={label}>{content}</div>
+              );
+            })}
           </div>
+
+          {openList && (
+            <section className="product-list-section report-stock-list" id="report-stock-list" ref={listRef}>
+              <div className="product-list-heading">
+                <div><p className="eyebrow">{openList.eyebrow}</p><h2>{`${openList.title} (${openItems.length})`}</h2></div>
+                <button type="button" className="icon-button" onClick={() => setStockView(null)} aria-label={`Close ${openList.title.toLowerCase()}`}><X size={16} /></button>
+              </div>
+              <div className="product-table-wrap">
+                <table className="product-table">
+                  <thead><tr><th>Product</th><th>HSN</th><th>Category</th><th>In stock</th><th>Threshold</th><th>{stockView === 'out' ? 'Status' : 'Short by'}</th></tr></thead>
+                  <tbody>
+                    {openItems.length ? openItems.map((item) => (
+                      <tr key={item.id}>
+                        <td><strong>{item.itemName}</strong></td>
+                        <td>{item.hsn}</td>
+                        <td>{item.itemCategory || '—'}</td>
+                        <td><span className={item.stockPresent === 0 ? 'stock-status out' : 'stock-status low'}><i />{item.stockPresent}</span></td>
+                        <td>{item.thresholdStock}</td>
+                        <td>{stockView === 'out' ? 'Out of stock' : `${Math.max(item.thresholdStock - item.stockPresent, 0)} units`}</td>
+                      </tr>
+                    )) : (
+                      <tr><td className="empty-products" colSpan="6">{openList.empty}</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
 
           <section className="product-list-section">
             <div className="product-list-heading">

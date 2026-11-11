@@ -62,10 +62,10 @@ export function resetPasswordWithSecurityAnswer(email, securityAnswer, newPasswo
   });
 }
 
-export function employeeLogin(warehouseId, empId, password) {
+export function employeeLogin(warehouseId, empId, password, portal) {
   return request('/auth/employee-login', {
     method: 'POST',
-    body: JSON.stringify({ warehouseId, empId, password }),
+    body: JSON.stringify({ warehouseId, empId, password, portal }),
   });
 }
 

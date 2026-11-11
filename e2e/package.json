@@ -1,0 +1,16 @@
+{
+  "name": "ims-e2e",
+  "private": true,
+  "type": "module",
+  "description": "Selenium WebDriver end-to-end tests for StockIt",
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --forceExit",
+    "test:headed": "node helpers/headed.js",
+    "test:junit": "node helpers/junit.js",
+    "stack": "node helpers/runStack.js"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "selenium-webdriver": "^4.51.0"
+  }
+}

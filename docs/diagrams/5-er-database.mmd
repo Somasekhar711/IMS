@@ -1,0 +1,62 @@
+erDiagram
+  USERS ||--o{ TEAM_MEMBERS : employs
+  USERS ||--o{ CATEGORIES : owns
+  USERS ||--o{ PRODUCTS : owns
+  USERS ||--o{ SUPPLIERS : owns
+  USERS ||--o{ CUSTOMERS : owns
+  USERS ||--o{ ACTIVITY_LOGS : audits
+  CATEGORIES ||--o{ PRODUCTS : groups
+  SUPPLIERS ||--o{ SUPPLIER_PRODUCTS : lists
+  PRODUCTS ||--o{ SUPPLIER_PRODUCTS : "supplied by"
+  SUPPLIERS ||--o{ PURCHASE_ORDERS : receives
+  CUSTOMERS ||--o{ SALES_ORDERS : places
+  PURCHASE_ORDERS ||--|{ PURCHASE_ORDER_ITEMS : contains
+  SALES_ORDERS ||--|{ SALES_ORDER_ITEMS : contains
+  PRODUCTS ||--o{ PURCHASE_ORDER_ITEMS : "bought as"
+  PRODUCTS ||--o{ SALES_ORDER_ITEMS : "sold as"
+  PRODUCTS ||--o{ INVENTORY_MOVEMENTS : records
+  TEAM_MEMBERS ||--o{ ACTIVITY_LOGS : performs
+
+  USERS {
+    bigint id PK
+    varchar full_name
+    varchar email UK
+    text password_hash
+    varchar warehouse_id UK
+  }
+  TEAM_MEMBERS {
+    bigint id PK
+    bigint owner_user_id FK
+    varchar emp_id
+    varchar status
+    jsonb permissions
+  }
+  PRODUCTS {
+    bigint id PK
+    bigint owner_user_id FK
+    bigint category_id FK
+    varchar hsn
+    numeric item_price
+    integer stock_present
+    integer threshold_stock
+  }
+  SALES_ORDERS {
+    bigint id PK
+    bigint customer_id FK
+    date order_date
+    numeric total_amount
+  }
+  SALES_ORDER_ITEMS {
+    bigint id PK
+    bigint sales_order_id FK
+    bigint product_id FK
+    integer quantity
+    numeric unit_price
+  }
+  INVENTORY_MOVEMENTS {
+    bigint id PK
+    bigint product_id FK
+    varchar movement_type
+    integer quantity_change
+    integer stock_after
+  }

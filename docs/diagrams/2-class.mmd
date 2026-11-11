@@ -1,0 +1,97 @@
+classDiagram
+  direction LR
+
+  class User {
+    +id
+    +fullName
+    +email
+    -passwordHash
+    +warehouseId
+    +register()
+    +login()
+    +resetPassword()
+  }
+  class TeamMember {
+    +id
+    +name
+    +empId
+    +role
+    +status
+    +permissions
+    +login()
+    +changePassword()
+  }
+  class Category {
+    +id
+    +name
+    +description
+  }
+  class Product {
+    +id
+    +hsn
+    +itemName
+    +itemPrice
+    +gstPercent
+    +stockPresent
+    +thresholdStock
+    +expiryDate
+    +adjustStock()
+  }
+  class Supplier {
+    +id
+    +name
+    +phone
+    +taxId
+  }
+  class Customer {
+    +id
+    +name
+    +phone
+  }
+  class PurchaseOrder {
+    +id
+    +orderDate
+    +reference
+    +totalAmount
+    +post()
+    +reverse()
+  }
+  class SalesOrder {
+    +id
+    +orderDate
+    +reference
+    +totalAmount
+    +post()
+    +reverse()
+  }
+  class OrderItem {
+    +quantity
+    +unitPrice
+    +lineTotal
+  }
+  class InventoryMovement {
+    +id
+    +movementType
+    +quantityChange
+    +stockAfter
+    +createdAt
+  }
+  class ActivityLog {
+    +id
+    +actorName
+    +action
+    +module
+    +description
+  }
+
+  User "1" --> "*" TeamMember : employs
+  User "1" --> "*" Product : owns
+  User "1" --> "*" ActivityLog : audits
+  Category "1" --> "*" Product : groups
+  Supplier "*" --> "*" Product : supplies
+  Supplier "1" --> "*" PurchaseOrder : receives
+  Customer "1" --> "*" SalesOrder : places
+  PurchaseOrder "1" *-- "1..*" OrderItem : contains
+  SalesOrder "1" *-- "1..*" OrderItem : contains
+  OrderItem "*" --> "1" Product : refers to
+  Product "1" --> "*" InventoryMovement : records

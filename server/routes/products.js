@@ -1,10 +1,40 @@
 import express from 'express';
 import pool from '../config/db.js';
+import { validateIdParam } from '../middleware/validateId.js';
 import { authRequired } from '../middleware/auth.js';
 import { requirePermission } from '../middleware/permissions.js';
 import { logActivity } from '../config/activityLog.js';
 
 const router = express.Router();
+router.param('id', validateIdParam);
+
+// Mirrors the CHECK constraints on the products table so bad input is answered
+// with a clear 400 instead of surfacing as a database error (500).
+function productProblem({ itemPrice, gst, discount, stockPresent, thresholdStock, mfd, expiryDate }) {
+  const isBlank = (value) => value === undefined || value === null || value === '';
+
+  const numbers = { Price: itemPrice, 'GST%': gst, 'Discount%': discount, Stock: stockPresent, 'Threshold stock': thresholdStock };
+  for (const [label, value] of Object.entries(numbers)) {
+    if (isBlank(value)) continue;
+    const number = Number(value);
+    if (!Number.isFinite(number) || number < 0) return `${label} must be a non-negative number`;
+  }
+
+  if (Number(gst) > 100) return 'GST% cannot be more than 100';
+  if (Number(discount) > 100) return 'Discount% cannot be more than 100';
+
+  for (const [label, value] of [['Stock', stockPresent], ['Threshold stock', thresholdStock]]) {
+    if (!isBlank(value) && !Number.isInteger(Number(value))) return `${label} must be a whole number`;
+  }
+
+  for (const [label, value] of [['Manufactured date', mfd], ['Expiry date', expiryDate]]) {
+    const isDate = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value));
+    if (!isBlank(value) && !isDate) return `${label} must be a valid date (YYYY-MM-DD)`;
+  }
+
+  if (mfd && expiryDate && expiryDate < mfd) return 'Expiry date cannot be before the manufactured date';
+  return null;
+}
 
 router.get('/', authRequired, requirePermission('products', 'read'), (req, res) => {
   const search = (req.query.search || '').trim();
@@ -81,6 +111,11 @@ router.post('/', authRequired, requirePermission('products', 'write'), async (re
 
   if (!hsn || !itemName || itemPrice === undefined || itemPrice === null || itemPrice === '') {
     return res.status(400).json({ message: 'HSN, item name, and price are required' });
+  }
+
+  const problem = productProblem(req.body);
+  if (problem) {
+    return res.status(400).json({ message: problem });
   }
 
   let categoryId = null;
@@ -178,6 +213,11 @@ router.delete('/:id', authRequired, requirePermission('products', 'write'), (req
 router.put('/:id', authRequired, requirePermission('products', 'write'), async (req, res) => {
   const { id } = req.params;
   const { itemPrice, itemCategory, gst, discount, mfd, expiryDate, stockUpdatedDate, stockPresent, thresholdStock } = req.body;
+
+  const problem = productProblem(req.body);
+  if (problem) {
+    return res.status(400).json({ message: problem });
+  }
 
   try {
     let categoryId = null;

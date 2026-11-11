@@ -1,10 +1,12 @@
 import express from 'express';
 import pool from '../config/db.js';
+import { validateIdParam } from '../middleware/validateId.js';
 import { authRequired } from '../middleware/auth.js';
 import { requirePermission } from '../middleware/permissions.js';
 import { logActivity } from '../config/activityLog.js';
 
 const router = express.Router();
+router.param('id', validateIdParam);
 
 router.get('/', authRequired, requirePermission('categories', 'read'), (req, res) => {
   const search = (req.query.search || '').trim();

@@ -1,10 +1,12 @@
 import express from 'express';
 import pool from '../config/db.js';
+import { validateIdParam } from '../middleware/validateId.js';
 import { authRequired } from '../middleware/auth.js';
 import { requirePermission } from '../middleware/permissions.js';
 import { logActivity } from '../config/activityLog.js';
 
 const router = express.Router();
+router.param('id', validateIdParam);
 
 function normalizeItems(items) {
   if (!Array.isArray(items) || items.length === 0) return null;

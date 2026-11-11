@@ -1,0 +1,29 @@
+sequenceDiagram
+  autonumber
+  actor U as User
+  participant C as React client
+  participant A as Express API
+  participant D as PostgreSQL
+
+  U->>C: Fill sales order form and save
+  C->>A: POST /api/sales-orders (with token)
+  A->>A: Verify token
+  A->>D: Read employee permission
+  D-->>A: salesOrders = write
+  A->>D: BEGIN transaction
+  A->>D: Read stock of each product
+  D-->>A: Stock levels
+
+  alt Quantity exceeds stock
+    A->>D: ROLLBACK
+    A-->>C: 400 Not enough stock
+    C-->>U: Show error message
+  else Stock is sufficient
+    A->>D: Insert order and line items
+    A->>D: Reduce product stock
+    A->>D: Insert stock ledger entries
+    A->>D: COMMIT
+    A->>D: Insert activity log entry
+    A-->>C: 201 Created (order)
+    C-->>U: Show success and new stock
+  end

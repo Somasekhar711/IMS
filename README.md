@@ -35,7 +35,8 @@ The client also includes the full set of dashboard modules:
 - Purchase and sales orders can be deleted, which reverses their stock impact
 - Stock movements: a read-only, filterable ledger of every purchase, sale, and manual stock adjustment
 - Reports: sales/purchases totals, order counts, top-selling products, and stock health for a selected date range
-- Users & roles: an account-scoped team roster (name, role, status, contact details) for tracking who does what — a contact list, not a shared login
+- Users & roles: an account-scoped team roster; a member can optionally be given an employee login (warehouse ID + employee ID) with none / read / write permission per module
+- Activity log: an admin-only audit trail of every create, update and delete, with the admin or employee who did it
 - Settings: profile editing, password change, and preferences (currency symbol, low-stock alert toggle) that apply across the dashboard
 - Product catalogs, suppliers, customers, orders, and the team roster are all isolated per authenticated user
 
@@ -85,6 +86,43 @@ IMS/
 	└── db/
 		└── 001_initial_schema.sql
 ```
+
+## Quick Start (no database setup)
+
+To try the whole app on a fresh, empty database without installing or configuring PostgreSQL:
+
+```bash
+cd server && npm install
+cd ../client && npm install
+cd ../e2e && npm install
+npm run stack
+```
+
+Then open `http://localhost:5174/`. Data is discarded when you stop it. For a persistent database, follow Database Setup below and create `server/.env` from `server/.env.example`.
+
+With `server/.env` pointing at a PostgreSQL database (local or hosted), two commands prepare it:
+
+```bash
+cd server
+npm run migrate   # creates every table (applies server/db/*.sql in order)
+npm run seed      # adds demo accounts and showcase data; sign-ins are listed at the top of server/db/seed.js
+```
+
+Then run `npm start` in `server` and `npm run dev` in `client`, and open `http://localhost:5173/`.
+
+## Testing
+
+StockIt has 157 automated tests at four levels. The full test plan, test-case catalogue, results and defect report are in [docs/TESTING.md](docs/TESTING.md).
+
+| Folder | Command | What it runs |
+|---|---|---|
+| `server` | `npm test` | Jest unit and API integration tests (128) |
+| `server` | `npm run test:coverage` | The same, with a coverage report |
+| `e2e` | `npm test` | Selenium WebDriver browser tests (20), headless Microsoft Edge |
+| `e2e` | `npm run test:headed` | The Selenium tests with the browser visible |
+| `e2e` | `npm run test:junit` | JUnit 5 black-box API tests (9); needs a JDK |
+
+Every command starts its own throwaway PostgreSQL, so no database, account or password is needed.
 
 ## Run the Client
 
@@ -150,7 +188,7 @@ psql -U postgres -d stockit -f server/db/016_security_question.sql
 
 Do not store plain-text passwords in `users.password_hash`; the backend will hash passwords before inserting them.
 
-Future schema changes should be added as new numbered migrations (the next one would be `017_...sql`), rather than editing or replacing an already-run migration.
+Migrations `017_warehouse_id.sql`, `018_employee_accounts.sql` and `019_activity_logs.sql` must be run as well, in order. Future schema changes should be added as new numbered migrations (the next one would be `020_...sql`), rather than editing or replacing an already-run migration.
 
 ### Password Recovery
 

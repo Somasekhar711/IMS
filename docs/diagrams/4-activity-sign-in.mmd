@@ -1,0 +1,19 @@
+flowchart TD
+  Start(( )):::start --> Enter["Enter email and password"]
+  Enter --> Filled{"Both fields filled?"}
+  Filled -- No --> Missing["Show: email and password are required"]
+  Missing --> Enter
+  Filled -- Yes --> Lookup["Look up account by email"]
+  Lookup --> Found{"Account exists?"}
+  Found -- No --> Invalid["Show: invalid email or password"]
+  Found -- Yes --> Compare["Compare password with stored bcrypt hash"]
+  Compare --> Match{"Password matches?"}
+  Match -- No --> Invalid
+  Invalid --> Enter
+  Match -- Yes --> Token["Issue signed token (JWT, 7 days)"]
+  Token --> Store["Store token in the browser"]
+  Store --> Dash["Open dashboard"]
+  Dash --> End(((" "))):::stop
+
+  classDef start fill:#153A33,stroke:#153A33
+  classDef stop fill:#153A33,stroke:#153A33

@@ -10,7 +10,7 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; }
-button, input { font: inherit; }
+button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 a { color: inherit; }
 
@@ -276,3 +276,38 @@ form { display: grid; gap: 19px; }.field { display: grid; gap: 8px; }.field > sp
 
 @media (max-width: 900px) { .order-item-row { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 700px) { .settings-grid { grid-template-columns: 1fr; } }
+
+/* ---- Sign-in / sign-up page fixes ---- */
+
+/* Keep the brand panel pinned while a long form (sign-up) scrolls beside it,
+   instead of stretching it to the form's height and pushing its content apart. */
+@media (min-width: 851px) {
+  .brand-panel { position: sticky; top: 0; align-self: start; height: 100vh; min-height: 0; }
+  .form-panel { align-items: start; padding-top: 34px; padding-bottom: 34px; }
+  .form-panel__inner { margin: auto 0; }
+}
+@media (min-width: 851px) and (max-height: 760px) {
+  .brand-panel h1 { font-size: clamp(34px, 4.6vh + 1.2vw, 56px); }
+  .brand-panel .inventory-card { margin-top: 26px; }
+  .brand-panel__content { padding: 24px 0 16px; }
+}
+
+/* Edge and IE draw their own "reveal password" eye next to ours. */
+.input-wrap input::-ms-reveal, .input-wrap input::-ms-clear { display: none; }
+
+/* Tighter rhythm on the longer sign-up form so less of it falls below the fold. */
+.form-heading--register { margin: 30px 0 22px; }
+.form-heading--register + form, .form-heading--register ~ form { gap: 15px; }
+
+/* Readable helper text; validation colours must win over the grey helper colour. */
+.password-rules { margin-top: -4px; font-size: 11.5px; }
+.password-rules.is-pristine span, .password-rules.is-pristine svg { color: #9aa29a; }
+.field small { font-size: 11.5px; line-height: 1.4; }
+.field small.match-message { color: #3c7564; }
+.field small.error-message { color: #b45f53; }
+.terms { font-size: 12px; }
+.terms input { flex: 0 0 auto; width: 15px; height: 15px; margin: 1px 0 0; }
+
+/* The security-question dropdown should look like the inputs around it. */
+.input-wrap select { height: 100%; padding: 0; cursor: pointer; text-overflow: ellipsis; }
+

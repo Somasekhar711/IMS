@@ -1,0 +1,45 @@
+flowchart LR
+  Admin(["Admin"]):::actor
+  Employee(["Employee"]):::actor
+
+  subgraph StockIt["StockIt Inventory Management System"]
+    direction TB
+    UC1(["Register account"])
+    UC2(["Sign in"])
+    UC3(["Reset password"])
+    UC4(["Manage products and categories"])
+    UC5(["Adjust stock"])
+    UC6(["Manage suppliers and customers"])
+    UC7(["Create purchase order"])
+    UC8(["Create sales order"])
+    UC9(["Check stock"])
+    UC10(["View stock movements and reports"])
+    UC11(["Manage employees"])
+    UC12(["Set module permissions"])
+    UC13(["View activity log"])
+  end
+
+  Admin --- UC1
+  Admin --- UC2
+  Admin --- UC3
+  Admin --- UC4
+  Admin --- UC5
+  Admin --- UC6
+  Admin --- UC7
+  Admin --- UC8
+  Admin --- UC10
+  Admin --- UC11
+  Admin --- UC13
+
+  UC2 --- Employee
+  UC4 --- Employee
+  UC5 --- Employee
+  UC6 --- Employee
+  UC7 --- Employee
+  UC8 --- Employee
+  UC10 --- Employee
+
+  UC8 -. "include" .-> UC9
+  UC11 -. "include" .-> UC12
+
+  classDef actor fill:#153A33,stroke:#153A33,color:#ffffff,font-weight:bold

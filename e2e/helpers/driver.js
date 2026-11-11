@@ -43,11 +43,12 @@ const quote = (text) => (text.includes('"') ? `'${text}'` : `"${text}"`);
 const textLocator = (text) => By.xpath(`//*[not(self::script) and not(self::option)][text()[contains(normalize-space(.), ${quote(text)})]]`);
 
 // Waits until some visible element contains the text, and returns it.
-export async function waitForText(driver, text, timeout = WAIT_MS) {
-  const locator = textLocator(text);
-  const element = await driver.wait(until.elementLocated(locator), timeout, `Expected to see text: ${text}`);
-  await driver.wait(until.elementIsVisible(element), timeout, `Text is present but hidden: ${text}`);
-  return element;
+export function waitForText(driver, text, timeout = WAIT_MS) {
+  return retryStale(async () => {
+    const element = await driver.wait(until.elementLocated(textLocator(text)), timeout, `Expected to see text: ${text}`);
+    await driver.wait(until.elementIsVisible(element), timeout, `Text is present but hidden: ${text}`);
+    return element;
+  });
 }
 
 export async function textIsAbsent(driver, text) {
@@ -55,10 +56,24 @@ export async function textIsAbsent(driver, text) {
   return matches.length === 0;
 }
 
-export async function find(driver, locator, timeout = WAIT_MS) {
-  const element = await driver.wait(until.elementLocated(locator), timeout, `Element not found: ${locator}`);
-  await driver.wait(until.elementIsVisible(element), timeout);
-  return element;
+// React re-renders can replace an element between locating it and using it
+// (a "stale element"). Any step wrapped in this simply locates it again.
+async function retryStale(action) {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await action();
+    } catch (error) {
+      if (error.name !== 'StaleElementReferenceError' || attempt >= 4) throw error;
+    }
+  }
+}
+
+export function find(driver, locator, timeout = WAIT_MS) {
+  return retryStale(async () => {
+    const element = await driver.wait(until.elementLocated(locator), timeout, `Element not found: ${locator}`);
+    await driver.wait(until.elementIsVisible(element), timeout);
+    return element;
+  });
 }
 
 // Finds the input/select that sits inside a <label> whose caption is `label`.
@@ -67,29 +82,27 @@ export function field(driver, label, scope = '') {
 }
 
 export async function type(driver, elementOrLocator, value) {
-  const element = elementOrLocator.sendKeys ? elementOrLocator : await find(driver, elementOrLocator);
-  await element.clear();
-  await element.sendKeys(String(value));
+  await retryStale(async () => {
+    const element = elementOrLocator.sendKeys ? elementOrLocator : await find(driver, elementOrLocator);
+    await element.clear();
+    await element.sendKeys(String(value));
+  });
   await pause();
 }
 
 export async function click(driver, locator) {
-  const element = await find(driver, locator);
-  await driver.wait(until.elementIsEnabled(element), WAIT_MS);
-  await driver.executeScript('arguments[0].scrollIntoView({ block: "center" });', element);
-  await element.click();
+  await retryStale(async () => {
+    const element = await find(driver, locator);
+    await driver.wait(until.elementIsEnabled(element), WAIT_MS);
+    await driver.executeScript('arguments[0].scrollIntoView({ block: "center" });', element);
+    await element.click();
+  });
   await pause();
 }
 
 // Reads an element's text, retrying if React re-renders it mid-read (stale element).
-export async function textOf(driver, locator) {
-  for (let attempt = 0; ; attempt += 1) {
-    try {
-      return await (await find(driver, locator)).getText();
-    } catch (error) {
-      if (error.name !== 'StaleElementReferenceError' || attempt >= 4) throw error;
-    }
-  }
+export function textOf(driver, locator) {
+  return retryStale(async () => (await find(driver, locator)).getText());
 }
 
 // Picks the <option> whose label contains `text` in the given <select>.

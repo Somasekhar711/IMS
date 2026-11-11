@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, Check, Eye, EyeOff, LockKeyhole, Mail, ShieldQuestion, UserRound, X } from 'lucide-react';
+import { ArrowRight, Check, Dot, Eye, EyeOff, KeyRound, LockKeyhole, Mail, ShieldQuestion, UserRound, X } from 'lucide-react';
 import { getSecurityQuestions } from '../api';
 
 const passwordRules = [
@@ -65,9 +65,11 @@ export function RegisterPage({ onRegister, error }) {
           <span>Password</span>
           <div className="input-wrap"><LockKeyhole size={18} /><input value={password} onChange={(event) => setPassword(event.target.value)} type={showPassword ? 'text' : 'password'} placeholder="Create a password" autoComplete="new-password" required /><button className="input-action" type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div>
         </label>
-        <div className="password-rules" aria-live="polite">
+        <div className={`password-rules ${password ? '' : 'is-pristine'}`} aria-live="polite">
           {passwordRules.map((rule) => {
             const isValid = rule.test(password);
+            // Before anything is typed the rules are shown as neutral hints, not as errors.
+            if (!password) return <span key={rule.label}><Dot size={13} />{rule.label}</span>;
             return <span className={isValid ? 'is-valid' : 'is-invalid'} key={rule.label}>{isValid ? <Check size={13} /> : <X size={13} />}{rule.label}</span>;
           })}
         </div>
@@ -82,7 +84,7 @@ export function RegisterPage({ onRegister, error }) {
         </label>
         <label className="field">
           <span>Security answer</span>
-          <div className="input-wrap"><input type="text" value={securityAnswer} onChange={(event) => setSecurityAnswer(event.target.value)} placeholder="Your answer" autoComplete="off" required /></div>
+          <div className="input-wrap"><KeyRound size={18} /><input type="text" value={securityAnswer} onChange={(event) => setSecurityAnswer(event.target.value)} placeholder="Your answer" autoComplete="off" required /></div>
           <small>Used to reset your password if you forget it. Answers aren't case-sensitive.</small>
         </label>
         <label className="terms"><input type="checkbox" required /><span>I agree to the <a href="#terms">terms of service</a> and <a href="#privacy">privacy policy</a>.</span></label>

@@ -6,6 +6,7 @@ import pool from '../config/db.js';
 import { authRequired } from '../middleware/auth.js';
 import { requireAdmin } from '../middleware/permissions.js';
 import { SECURITY_QUESTIONS, normalizeAnswer } from '../config/securityQuestions.js';
+import { passwordProblem } from '../config/passwordPolicy.js';
 
 const router = express.Router();
 
@@ -33,14 +34,17 @@ router.get('/security-questions', (req, res) => {
 });
 
 router.post('/register', async (req, res) => {
-  const { fullName, email, password, securityQuestion, securityAnswer } = req.body;
+  const { fullName, password, securityQuestion, securityAnswer } = req.body;
+  // Emails are stored lowercased so "A@x.com" and "a@x.com" are the same account.
+  const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
 
   if (!fullName || !email || !password || !securityQuestion || !securityAnswer) {
     return res.status(400).json({ message: 'fullName, email, password, securityQuestion, and securityAnswer are required' });
   }
 
-  if (password.length < 8) {
-    return res.status(400).json({ message: 'Password must be at least 8 characters' });
+  const problem = passwordProblem(password);
+  if (problem) {
+    return res.status(400).json({ message: problem });
   }
 
   if (!SECURITY_QUESTIONS.includes(securityQuestion)) {
@@ -52,7 +56,7 @@ router.post('/register', async (req, res) => {
   }
 
   try {
-    const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    const existing = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1', [email]);
     if (existing.rowCount > 0) {
       return res.status(409).json({ message: 'Email is already registered' });
     }
@@ -85,13 +89,14 @@ router.post('/register', async (req, res) => {
 });
 
 router.post('/login', (req, res) => {
-  const { email, password } = req.body;
+  const { password } = req.body;
+  const email = typeof req.body.email === 'string' ? req.body.email.trim() : '';
 
-  if (!email || !password) {
+  if (!email || typeof password !== 'string' || !password) {
     return res.status(400).json({ message: 'Email and password are required' });
   }
 
-  pool.query('SELECT id, full_name, email, password_hash, role, warehouse_id FROM users WHERE email = $1', [email], async (err, result) => {
+  pool.query('SELECT id, full_name, email, password_hash, role, warehouse_id FROM users WHERE LOWER(email) = LOWER($1)', [email], async (err, result) => {
     if (err) {
       console.error('Database error', err);
       return res.status(500).json({ message: 'Server error' });
@@ -196,8 +201,9 @@ router.put('/employee-password', authRequired, async (req, res) => {
     return res.status(400).json({ message: 'Current and new password are required' });
   }
 
-  if (newPassword.length < 8) {
-    return res.status(400).json({ message: 'New password must be at least 8 characters' });
+  const problem = passwordProblem(newPassword);
+  if (problem) {
+    return res.status(400).json({ message: `New ${problem.charAt(0).toLowerCase()}${problem.slice(1)}` });
   }
 
   try {
@@ -258,7 +264,7 @@ router.post('/security-question', async (req, res) => {
   }
 
   try {
-    const result = await pool.query('SELECT security_question FROM users WHERE email = $1', [email]);
+    const result = await pool.query('SELECT security_question FROM users WHERE LOWER(email) = LOWER($1)', [email]);
 
     if (result.rowCount === 0 || !result.rows[0].security_question) {
       return res.status(404).json({ message: 'No account with a security question was found for that email' });
@@ -279,12 +285,13 @@ router.post('/reset-password', async (req, res) => {
     return res.status(400).json({ message: 'Email, security answer, and new password are required' });
   }
 
-  if (newPassword.length < 8) {
-    return res.status(400).json({ message: 'New password must be at least 8 characters' });
+  const problem = passwordProblem(newPassword);
+  if (problem) {
+    return res.status(400).json({ message: `New ${problem.charAt(0).toLowerCase()}${problem.slice(1)}` });
   }
 
   try {
-    const result = await pool.query('SELECT id, security_answer_hash FROM users WHERE email = $1', [email]);
+    const result = await pool.query('SELECT id, security_answer_hash FROM users WHERE LOWER(email) = LOWER($1)', [email]);
 
     if (result.rowCount === 0 || !result.rows[0].security_answer_hash) {
       return res.status(400).json({ message: 'Security answer is incorrect' });
@@ -337,8 +344,9 @@ router.put('/password', authRequired, requireAdmin, async (req, res) => {
     return res.status(400).json({ message: 'Current and new password are required' });
   }
 
-  if (newPassword.length < 8) {
-    return res.status(400).json({ message: 'New password must be at least 8 characters' });
+  const problem = passwordProblem(newPassword);
+  if (problem) {
+    return res.status(400).json({ message: `New ${problem.charAt(0).toLowerCase()}${problem.slice(1)}` });
   }
 
   try {

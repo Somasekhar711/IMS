@@ -1,4 +1,5 @@
-const API_BASE = 'http://localhost:3000/api';
+// Override with VITE_API_URL (e.g. for the automated UI tests, which run the API on another port).
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 async function request(path, options = {}) {
   const token = localStorage.getItem('stockit_token');

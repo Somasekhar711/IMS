@@ -98,11 +98,15 @@ Examples of retrospective outcomes: after Sprint 2, merge conflicts led the team
 
 **Architecture.** StockIt has three tiers. The React client runs in the browser and calls the API. The Express API authenticates the token, checks the role and permission, validates the input and runs SQL. PostgreSQL stores the data. The browser never talks to the database directly.
 
+![Use case diagram](diagrams/1-use-case.png)
+
 **Use case diagram.** Actors: *Admin* and *Employee*.
 
 - Admin: register, sign in, reset password, manage products, manage categories, adjust stock, manage suppliers and customers, create purchase orders, create sales orders, view stock movements, view reports, manage employees and permissions, view activity log, change settings.
 - Employee: sign in, change password, and any of the product, inventory, partner, order and report use cases that the admin has permitted.
 - "Create sales order" *includes* "check stock"; "manage employees" *includes* "set permissions".
+
+![Class diagram](diagrams/2-class.png)
 
 **Class diagram (main entities)**
 
@@ -118,9 +122,15 @@ Examples of retrospective outcomes: after Sprint 2, merge conflicts led the team
 | InventoryMovement | id, type, quantityChange, stockAfter, createdAt | refers to one Product |
 | ActivityLog | id, actorName, action, module, description | belongs to one User |
 
+![Sequence diagram for creating a sales order](diagrams/3-sequence-sales-order.png)
+
 **Sequence diagram — create sales order.** (1) The user submits the order form. (2) The client sends `POST /api/sales-orders` with the token. (3) The API verifies the token and the "sales orders: write" permission. (4) The API begins a transaction and reads the stock of each product. (5) If any quantity exceeds stock, it rolls back and returns an error. (6) Otherwise it inserts the order and its items, reduces stock, writes ledger entries and commits. (7) The API writes the activity log and returns the order. (8) The client shows a success message and the new stock.
 
+![Activity diagram for sign in](diagrams/4-activity-sign-in.png)
+
 **Activity diagram — sign in.** Enter credentials → validate fields → look up account → compare password hash → if wrong, show error and return to the form; if correct, issue token → open dashboard.
+
+![Entity-relationship diagram of the database](diagrams/5-er-database.png)
 
 **Database design.** Thirteen tables in third normal form: `users`, `team_members`, `categories`, `products`, `suppliers`, `supplier_products`, `customers`, `purchase_orders`, `purchase_order_items`, `sales_orders`, `sales_order_items`, `inventory_movements` and `activity_logs`. Every table carries `owner_user_id`, which enforces data isolation.
 

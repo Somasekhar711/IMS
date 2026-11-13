@@ -1,0 +1,29 @@
+sequenceDiagram
+  autonumber
+  actor U as User
+  participant P as Phone (DroidCam app)
+  participant DC as DroidCam Client (PC)
+  participant S as Scanner (browser)
+  participant C as Add Product page
+  participant O as Open Food Facts
+  P->>DC: Camera video over Wi-Fi (port 4747)
+  DC->>DC: Publish as "DroidCam Video" webcam
+  U->>C: Scan barcode
+  C->>S: Open scanner
+  S->>S: getUserMedia: list cameras, pick DroidCam Video (HD)
+  loop About 6 times a second
+    S->>S: Read green-box area, decode barcode
+  end
+  alt Same barcode as last time
+    S-->>U: Show Use … again button
+  else New barcode
+    S->>C: onDetected(code)
+    alt Barcode already in catalogue
+      C-->>U: Open that product for updating
+    else New product
+      C->>C: Fill Barcode field
+      C->>O: GET /api/v2/product/{code}
+      O-->>C: brand, name, quantity (or not found)
+      C-->>U: Item name filled, enter the rest
+    end
+  end

@@ -1,0 +1,28 @@
+sequenceDiagram
+  autonumber
+  actor U as User
+  participant C as React client
+  participant A as Express API
+  participant D as PostgreSQL
+  U->>C: Delete order, confirm
+  C->>A: DELETE /api/purchase-orders/:id or /api/sales-orders/:id
+  A->>D: BEGIN
+  A->>D: Find order in this account and its lines
+  alt Purchase order
+    loop Each line
+      A->>D: UPDATE stock − qty WHERE stock ≥ qty
+    end
+    alt Any line short
+      A->>D: ROLLBACK
+      A-->>C: 409 stock already sold
+    end
+  else Sales order
+    loop Each line
+      A->>D: UPDATE stock + qty
+    end
+  end
+  A->>D: DELETE its ledger entries and the order
+  A->>D: COMMIT
+  A->>D: Activity log
+  A-->>C: 204 deleted
+  C-->>U: Order removed, stock restored

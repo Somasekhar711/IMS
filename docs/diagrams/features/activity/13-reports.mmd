@@ -1,0 +1,20 @@
+flowchart TD
+  S(( )):::start --> Open["Open Reports"]
+  Open --> Period["Choose period: 7, 30, 90 days or all time"]
+  Period --> API["GET /api/reports/summary?range=…"]
+  API --> Queries["Server runs 11 queries in parallel:<br/>sales, purchases, profit, top products, categories,<br/>top customers, trend, stock, stock lists, expiring, movements"]
+  Queries --> Calc["Compute average order value, gross margin,<br/>stock value at cost and price, potential profit"]
+  Calc --> Cards["Show 8 summary cards"]
+  Cards --> Uncosted{"Revenue from products<br/>without a cost price?"}
+  Uncosted -- Yes --> Note["Show note: not counted in gross profit"]
+  Uncosted -- No --> Chart
+  Note --> Chart["Fill missing days in the trend; draw revenue and profit bars"]
+  Chart --> Tables["Show top products, top customers,<br/>sales by category"]
+  Tables --> Click{"Stock card clicked?"}
+  Click -- "Low / Out / Expiring" --> List["Show the matching product list"]:::ok
+  Click -- No --> E((( ))):::stop
+  List --> E
+  classDef start fill:#153A33,stroke:#153A33
+  classDef stop fill:#153A33,stroke:#153A33
+  classDef error fill:#FBE3E8,stroke:#A03B4F,color:#5A1E2A
+  classDef ok fill:#DDF0C8,stroke:#3F6B55

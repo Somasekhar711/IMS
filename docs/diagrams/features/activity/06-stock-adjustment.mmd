@@ -1,0 +1,24 @@
+flowchart TD
+  S(( )):::start --> Inv["Open Inventory"]
+  Inv --> Pick["Click add stock or remove stock on a product"]
+  Pick --> Qty["Enter quantity and a reason"]
+  Qty --> WQ{"Whole number above 0?"}
+  WQ -- No --> Qty
+  WQ -- Yes --> Calc["New stock = current ± quantity"]
+  Calc --> Neg{"New stock ≥ 0?"}
+  Neg -- No --> Refuse["Refuse the adjustment"]:::error
+  Refuse --> Qty
+  Neg -- Yes --> Send["PATCH /api/products/:id/stock"]
+  Send --> Lock["Server: begin transaction, lock the product row"]
+  Lock --> Set["Set stock and stock-updated date"]
+  Set --> Changed{"Stock actually changed?"}
+  Changed -- Yes --> Ledger["Write an adjustment ledger entry<br/>with the change and the reason"]
+  Ledger --> Commit
+  Changed -- No --> Commit["Commit"]
+  Commit --> Log["Write activity log (if changed)"]
+  Log --> UI["Update Inventory, alerts and badge"]:::ok
+  UI --> E((( ))):::stop
+  classDef start fill:#153A33,stroke:#153A33
+  classDef stop fill:#153A33,stroke:#153A33
+  classDef error fill:#FBE3E8,stroke:#A03B4F,color:#5A1E2A
+  classDef ok fill:#DDF0C8,stroke:#3F6B55

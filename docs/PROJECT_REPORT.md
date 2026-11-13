@@ -70,7 +70,7 @@ The sprint contents below follow the project's commit history.
 | 2 | 28 Aug – 6 Sep | Working core | Express API and database schema; authentication with JWT; product create, read, update, delete; inventory page with stock adjustment; data isolated per account; review fixes |
 | 3 | 26 Sep – 8 Oct | Business modules | Categories, suppliers, customers; purchase and sales orders that update stock; stock movement ledger; reports; settings; password recovery by security question |
 | 4 | 29 Oct – 5 Nov | Multi-user access | Employee logins with a warehouse ID; per-module permissions; activity log; code audit fixes; date-handling fix |
-| 5 | 6 Nov – 11 Nov | Quality | 157 automated tests with Jest, Selenium and JUnit; five defects found and fixed; test documentation; demo data |
+| 5 | 6 Nov – 11 Nov | Quality | 181 automated tests with Jest, Selenium and JUnit; five defects found and fixed; test documentation; demo data |
 
 **Scrum meetings**
 
@@ -98,15 +98,13 @@ Examples of retrospective outcomes: after Sprint 2, merge conflicts led the team
 
 **Architecture.** StockIt has three tiers. The React client runs in the browser and calls the API. The Express API authenticates the token, checks the role and permission, validates the input and runs SQL. PostgreSQL stores the data. The browser never talks to the database directly.
 
-![Use case diagram](diagrams/1-use-case.png)
-
 **Use case diagram.** Actors: *Admin* and *Employee*.
 
 - Admin: register, sign in, reset password, manage products, manage categories, adjust stock, manage suppliers and customers, create purchase orders, create sales orders, view stock movements, view reports, manage employees and permissions, view activity log, change settings.
 - Employee: sign in, change password, and any of the product, inventory, partner, order and report use cases that the admin has permitted.
 - "Create sales order" *includes* "check stock"; "manage employees" *includes* "set permissions".
 
-![Class diagram](diagrams/2-class.png)
+![Use case diagram](diagrams/1-use-case.png)
 
 **Class diagram (main entities)**
 
@@ -115,24 +113,26 @@ Examples of retrospective outcomes: after Sprint 2, merge conflicts led the team
 | User | id, fullName, email, passwordHash, warehouseId | owns all other entities (1 to many) |
 | TeamMember | id, name, empId, role, status, permissions | belongs to one User |
 | Category | id, name, description | has many Products |
-| Product | id, hsn, itemName, price, gst, stockPresent, thresholdStock, expiryDate | belongs to one Category; supplied by many Suppliers |
+| Product | id, hsn, barcode, itemName, price, costPrice, gst, stockPresent, thresholdStock, expiryDate | belongs to one Category; supplied by many Suppliers |
 | Supplier / Customer | id, name, phone, email, address | Supplier has many PurchaseOrders; Customer has many SalesOrders |
 | PurchaseOrder / SalesOrder | id, orderDate, reference, totalAmount | each has many OrderItems (composition) |
-| OrderItem | productId, quantity, unitPrice, lineTotal | refers to one Product |
+| PurchaseOrderItem / SalesOrderItem | productId, quantity, unit cost or price, lineTotal (sales lines also keep the unit cost at the time of sale) | refers to one Product |
 | InventoryMovement | id, type, quantityChange, stockAfter, createdAt | refers to one Product |
 | ActivityLog | id, actorName, action, module, description | belongs to one User |
 
-![Sequence diagram for creating a sales order](diagrams/3-sequence-sales-order.png)
+![Class diagram](diagrams/2-class.png)
 
 **Sequence diagram — create sales order.** (1) The user submits the order form. (2) The client sends `POST /api/sales-orders` with the token. (3) The API verifies the token and the "sales orders: write" permission. (4) The API begins a transaction and reads the stock of each product. (5) If any quantity exceeds stock, it rolls back and returns an error. (6) Otherwise it inserts the order and its items, reduces stock, writes ledger entries and commits. (7) The API writes the activity log and returns the order. (8) The client shows a success message and the new stock.
 
-![Activity diagram for sign in](diagrams/4-activity-sign-in.png)
+![Sequence diagram for creating a sales order](diagrams/3-sequence-sales-order.png)
 
 **Activity diagram — sign in.** Enter credentials → validate fields → look up account → compare password hash → if wrong, show error and return to the form; if correct, issue token → open dashboard.
 
-![Entity-relationship diagram of the database](diagrams/5-er-database.png)
+![Activity diagram for sign in](diagrams/4-activity-sign-in.png)
 
 **Database design.** Thirteen tables in third normal form: `users`, `team_members`, `categories`, `products`, `suppliers`, `supplier_products`, `customers`, `purchase_orders`, `purchase_order_items`, `sales_orders`, `sales_order_items`, `inventory_movements` and `activity_logs`. Every table carries `owner_user_id`, which enforces data isolation.
+
+![Entity-relationship diagram of the database](diagrams/5-er-database.png)
 
 ## 7. Implementation and Modules
 
@@ -159,8 +159,8 @@ Examples of retrospective outcomes: after Sprint 2, merge conflicts led the team
 | Level | Tool | Tests | What is checked |
 |---|---|---|---|
 | Unit | Jest | 27 | Single functions: password policy, permission rules, token checks |
-| Integration | Jest + Supertest | 101 | Every API route against a real PostgreSQL database |
-| System | Selenium WebDriver | 20 | Complete user journeys in the Microsoft Edge browser |
+| Integration | Jest + Supertest | 120 | Every API route against a real PostgreSQL database |
+| System | Selenium WebDriver | 25 | Complete user journeys in the Microsoft Edge browser |
 | Black-box API | JUnit 5 | 9 | The running system over HTTP from a Java client |
 
 **Techniques used:** equivalence partitioning, boundary value analysis, negative testing, security testing, state-based testing and regression testing.
@@ -178,6 +178,6 @@ Examples of retrospective outcomes: after Sprint 2, merge conflicts led the team
 | ST-17 | Sale through the browser | Sell 5 of 55 using the form | Success message; stock shows 50 | Pass |
 | JU-08 | Stock rule from an outside client | Sale of 4, then of 7, from stock of 10 | First accepted, second refused; stock is 6 | Pass |
 
-**Results.** All 157 tests pass. The tests execute 70% of the server's lines and 86% of its functions. Testing found five defects, all corrected and re-tested: invalid product data and non-numeric IDs caused server errors; a malformed request exposed internal error details; password rules were enforced only in the browser; and email addresses were treated as case-sensitive.
+**Results.** All 181 tests pass. The tests execute 70% of the server's lines and 86% of its functions. Testing found five defects, all corrected and re-tested: invalid product data and non-numeric IDs caused server errors; a malformed request exposed internal error details; password rules were enforced only in the browser; and email addresses were treated as case-sensitive.
 
-The complete list of 140 test cases is in `docs/TESTING.md`.
+The complete list of 163 test cases is in `docs/TESTING.md`.

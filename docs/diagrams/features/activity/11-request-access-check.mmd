@@ -1,0 +1,36 @@
+flowchart TD
+  S(( )):::start --> Req["API receives a request"]
+  Req --> Public{"Public route?<br/>(login, register, reset, health)"}
+  Public -- Yes --> Handler
+  Public -- No --> Tok{"Valid Bearer token?"}
+  Tok -- No --> E401["401 Authentication required /<br/>Invalid or expired token"]:::error
+  E401 --> E((( ))):::stop
+  Tok -- Yes --> Admin{"Admin token?"}
+  Admin -- Yes --> Handler
+  Admin -- No --> AdminOnly{"Admin-only route?"}
+  AdminOnly -- Yes --> E403a["403 Admins only"]:::error
+  E403a --> E
+  AdminOnly -- No --> Active{"Team member active?<br/>(read from database)"}
+  Active -- No --> E403b["403 Account access has been disabled"]:::error
+  E403b --> E
+  Active -- Yes --> Level{"Module level ≥ required<br/>(read or write)?"}
+  Level -- No --> E403c["403 No permission"]:::error
+  E403c --> E
+  Level -- Yes --> Handler["Route handler"]
+  Handler --> Id{"Numeric id in the URL?"}
+  Id -- No --> E404["404 Not found"]:::error
+  E404 --> E
+  Id -- Yes --> Valid{"Input valid?"}
+  Valid -- No --> E400["400 with the reason"]:::error
+  E400 --> E
+  Valid -- Yes --> SQL["Parameterised SQL scoped to the account"]
+  SQL --> Result{"Outcome"}
+  Result -- "Row not found" --> E404
+  Result -- Duplicate --> E409["409 Conflict"]:::error
+  E409 --> E
+  Result -- Success --> OK["200 / 201 / 204 + activity log for changes"]:::ok
+  OK --> E
+  classDef start fill:#153A33,stroke:#153A33
+  classDef stop fill:#153A33,stroke:#153A33
+  classDef error fill:#FBE3E8,stroke:#A03B4F,color:#5A1E2A
+  classDef ok fill:#DDF0C8,stroke:#3F6B55

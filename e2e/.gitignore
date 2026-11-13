@@ -1,3 +1,4 @@
 node_modules
 .pgdata
 screenshots
+.fake-camera.y4m

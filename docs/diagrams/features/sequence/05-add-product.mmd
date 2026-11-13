@@ -1,0 +1,25 @@
+sequenceDiagram
+  autonumber
+  actor U as User
+  participant C as React client
+  participant A as Express API
+  participant D as PostgreSQL
+  U->>C: Fill product form, Add product
+  C->>A: POST /api/products
+  A->>A: Check token and products: write
+  A->>A: Validate required fields and values
+  A->>D: Find category by name
+  opt New category
+    A->>D: INSERT category
+    A->>D: Activity log: created category
+  end
+  A->>D: INSERT product (HSN, barcode, prices, stock…)
+  alt Duplicate HSN or barcode
+    D-->>A: unique violation
+    A-->>C: 409 already exists
+  else Saved
+    D-->>A: product row
+    A->>D: Activity log: created product
+    A-->>C: 201 product
+    C-->>U: Products list
+  end

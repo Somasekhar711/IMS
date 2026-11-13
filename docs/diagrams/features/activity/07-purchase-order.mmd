@@ -1,0 +1,28 @@
+flowchart TD
+  S(( )):::start --> Act{"Create or delete?"}
+  Act -- Create --> Form["Choose supplier (optional), date, reference;<br/>add lines: product, quantity, unit cost"]
+  Form --> Lines{"At least one line; quantities whole > 0;<br/>costs ≥ 0?"}
+  Lines -- No --> E400["Show the problem (400)"]:::error
+  E400 --> Form
+  Lines -- Yes --> Begin["Begin transaction"]
+  Begin --> Own{"Supplier and products<br/>belong to this account?"}
+  Own -- No --> RB1["Roll back; show unavailable (400)"]:::error
+  RB1 --> Form
+  Own -- Yes --> Order["Insert the order with its total"]
+  Order --> Each["For each line: insert item, add quantity to stock,<br/>set cost price = unit cost, write purchase ledger entry"]
+  Each --> Commit["Commit"]
+  Commit --> Log["Write activity log"]
+  Log --> Done["Show the order; stock increased"]:::ok
+  Done --> E1((( ))):::stop
+  Act -- Delete --> Confirm["Confirm: this reverses the stock it added"]
+  Confirm --> B2["Begin transaction"]
+  B2 --> Enough{"Every line's quantity<br/>still in stock?"}
+  Enough -- No --> RB2["Roll back; show: stock already sold (409)"]:::error
+  RB2 --> E2((( ))):::stop
+  Enough -- Yes --> Rev["Subtract quantities; delete its ledger entries<br/>and the order"]
+  Rev --> C2["Commit; write activity log"]:::ok
+  C2 --> E2
+  classDef start fill:#153A33,stroke:#153A33
+  classDef stop fill:#153A33,stroke:#153A33
+  classDef error fill:#FBE3E8,stroke:#A03B4F,color:#5A1E2A
+  classDef ok fill:#DDF0C8,stroke:#3F6B55

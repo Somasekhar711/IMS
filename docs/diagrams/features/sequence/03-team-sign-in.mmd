@@ -1,0 +1,26 @@
+sequenceDiagram
+  autonumber
+  actor M as Manager / Employee
+  participant C as React client
+  participant A as Express API
+  participant D as PostgreSQL
+  M->>C: Manager or Employee tab: Warehouse ID, ID, password
+  C->>A: POST /api/auth/employee-login (portal)
+  A->>D: Find owner by Warehouse ID
+  A->>D: Find team member by employee ID
+  D-->>A: member (role, status, hash, must change)
+  A->>A: Check active, compare password
+  alt Role does not match the tab
+    A-->>C: 403 Use the other tab
+  else Valid
+    A->>A: Sign JWT {owner id, employee, member id}
+    A-->>C: 200 token, role, must change password
+    opt Temporary password
+      M->>C: Enter new password
+      C->>A: PUT /api/auth/employee-password
+      A->>D: Save new hash, must change = false
+    end
+    C->>A: GET /api/auth/employee-permissions
+    A-->>C: permission map
+    C-->>M: Dashboard with permitted modules only
+  end

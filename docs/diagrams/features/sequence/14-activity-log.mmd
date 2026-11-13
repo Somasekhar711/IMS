@@ -1,0 +1,19 @@
+sequenceDiagram
+  autonumber
+  actor W as Admin or team member
+  participant A as Express API
+  participant D as PostgreSQL
+  actor AD as Admin
+  participant C as React client
+  W->>A: Any create / update / delete
+  A->>D: Perform the change
+  A->>D: INSERT activity log (actor name, action, module, description)
+  AD->>C: Open activity log
+  C->>A: GET /api/activity-logs?limit=50
+  A->>A: Admin only
+  A->>D: SELECT newest first
+  D-->>A: entries
+  A-->>C: entries
+  C-->>AD: Who did what, and when
+  AD->>C: Load older
+  C->>A: GET /api/activity-logs?before=<last id>

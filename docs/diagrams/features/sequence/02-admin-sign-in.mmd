@@ -1,0 +1,20 @@
+sequenceDiagram
+  autonumber
+  actor U as Admin
+  participant C as React client
+  participant A as Express API
+  participant D as PostgreSQL
+  U->>C: Admin tab: email and password
+  C->>A: POST /api/auth/login
+  A->>D: SELECT user WHERE lower(email) = lower(…)
+  D-->>A: user row
+  A->>A: bcrypt.compare(password, hash)
+  alt Wrong email or password
+    A-->>C: 401 Invalid email or password
+    C-->>U: Show error
+  else Correct
+    A->>A: Sign JWT {id, role, actorType: admin}
+    A-->>C: 200 user and token
+    C->>C: Store token
+    C-->>U: Dashboard with every module
+  end

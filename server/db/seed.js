@@ -10,11 +10,11 @@
 //   Admin 2 (shows data isolation)    email: second@stockit.demo    password: Demo@1234
 //   Security answer for both admins:  Hyderabad
 //
-//   Employees of Admin 1 - sign in with "Sign in as an employee", using the
+//   Team of Admin 1 - sign in from the Manager or Employee tab, using the
 //   Warehouse ID shown under Settings (also printed when this script finishes):
-//     EMP001  Kiran Kumar   password: Staff@1234   manager: write access to stock, orders and partners
-//     EMP002  Divya Sharma  password: Staff@1234   sales staff: sales and customers only
-//     EMP003  Arjun Reddy   password: Staff@1234   read-only viewer
+//     EMP001  Kiran Kumar   password: Staff@1234   Manager tab: write access to stock, orders and partners
+//     EMP002  Divya Sharma  password: Staff@1234   Employee tab: sales and customers only
+//     EMP003  Arjun Reddy   password: Staff@1234   Employee tab: read-only viewer
 //     (Meera Nair is on the roster without a login; Rahul Verma is disabled)
 import app from '../app.js';
 import pool from '../config/db.js';
@@ -140,6 +140,7 @@ async function seedMainAccount() {
   for (const [hsn, itemName, itemCategory, itemPrice, gst, discount, stock, threshold, mfd, expiry] of PRODUCTS) {
     const created = await call('POST', '/products', {
       hsn, itemName, itemCategory, itemPrice, gst, discount,
+      costPrice: Math.round(itemPrice * 0.72 * 100) / 100, // purchases update this to the latest cost
       mfd: day(mfd), expiryDate: expiry === null ? '' : day(expiry), stockUpdatedDate: day(-75),
       stockPresent: stock, thresholdStock: threshold,
     }, token);

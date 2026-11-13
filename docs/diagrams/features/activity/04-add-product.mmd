@@ -1,0 +1,32 @@
+flowchart TD
+  S(( )):::start --> Open["Open Add Product"]
+  Open --> How{"Scan a barcode?"}
+  How -- Yes --> Scan["Run the barcode scan<br/>(see 05-barcode-scanning)"]
+  Scan --> Known{"Barcode already<br/>in the catalogue?"}
+  Known -- Yes --> Update["Open that product in Update product"]
+  Update --> Edit["Change price, cost, stock, dates…"]
+  Edit --> SaveU["Save changes (PUT /api/products/:id)"]
+  SaveU --> E1((( ))):::stop
+  Known -- No --> Prefill["Barcode filled; name filled if found"]
+  How -- No --> Fill
+  Prefill --> Fill["Fill HSN, name, item price, cost price,<br/>category, GST, discount, dates, stock, threshold"]
+  Fill --> Required{"HSN, name and price filled?"}
+  Required -- No --> Browser["Browser highlights the empty field"]:::error
+  Browser --> Fill
+  Required -- Yes --> Valid{"Server: values valid?<br/>(≥ 0, GST/discount ≤ 100,<br/>expiry ≥ MFD, barcode format)"}
+  Valid -- No --> E400["Show the reason (400)"]:::error
+  E400 --> Fill
+  Valid -- Yes --> Cat{"Category name exists?"}
+  Cat -- No --> NewCat["Create the category"]
+  NewCat --> Insert
+  Cat -- Yes --> Insert["Insert the product"]
+  Insert --> Dup{"Duplicate HSN or barcode?"}
+  Dup -- Yes --> E409["Show: already exists (409)"]:::error
+  E409 --> Fill
+  Dup -- No --> Log["Write activity log"]
+  Log --> List["Show the Products list"]:::ok
+  List --> E2((( ))):::stop
+  classDef start fill:#153A33,stroke:#153A33
+  classDef stop fill:#153A33,stroke:#153A33
+  classDef error fill:#FBE3E8,stroke:#A03B4F,color:#5A1E2A
+  classDef ok fill:#DDF0C8,stroke:#3F6B55

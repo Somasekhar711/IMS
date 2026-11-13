@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from '@jest/globals';
 import {
   By, buildDriver, openFresh, waitForText, find, field, type, click, button, placeholder,
-  signIn, signOut, createAccount, screenshot,
+  signIn, signOut, createAccount, screenshot, apiCall,
 } from '../helpers/driver.js';
 
 describe('Selenium: sign-up, sign-in and password recovery', () => {
@@ -111,5 +111,36 @@ describe('Selenium: sign-up, sign-in and password recovery', () => {
     await click(driver, button('Sign in'));
     await signIn(driver, account.email, 'Fresh@12345');
     await find(driver, By.css('nav[aria-label="Main navigation"]'));
+  });
+
+  test('ST-22 a manager signs in from the Manager tab at the top; staff are sent to the Employee tab', async () => {
+    const owner = await createAccount({ fullName: 'Shop Owner' });
+    for (const [name, role, empId] of [['Mona Manager', 'manager', 'MGR001'], ['Sam Staff', 'staff', 'EMP001']]) {
+      const member = await apiCall('POST', '/team-members', { name, role, status: 'active', enableLogin: true, empId, permissions: { products: 'read', reports: 'read' } }, owner.token);
+      const login = await apiCall('POST', '/auth/employee-login', { warehouseId: owner.warehouseId, empId, password: member.tempPassword });
+      await apiCall('PUT', '/auth/employee-password', { currentPassword: member.tempPassword, newPassword: 'Team@12345' }, login.token);
+    }
+
+    await openFresh(driver);
+    const tabs = await driver.findElements(By.css('[role="tablist"] [role="tab"]'));
+    expect(await Promise.all(tabs.map((tab) => tab.getText()))).toEqual(['Admin', 'Manager', 'Employee', 'Create account']);
+
+    const fillTeamForm = async (empId) => {
+      await type(driver, placeholder('WH-XXXXXX'), owner.warehouseId);
+      await type(driver, By.xpath('//label[span[contains(., " ID") and not(contains(., "Warehouse"))]]//input'), empId);
+      await type(driver, By.css('input[autocomplete="current-password"]'), 'Team@12345');
+      await click(driver, By.css('form button[type="submit"]'));
+    };
+
+    await click(driver, By.xpath('//button[@role="tab"][normalize-space()="Manager"]'));
+    await waitForText(driver, 'Manager sign in.');
+    await fillTeamForm('EMP001');
+    await waitForText(driver, 'Use the Employee tab to sign in.');
+    await screenshot(driver, 'ST-22-staff-on-manager-tab');
+
+    await fillTeamForm('MGR001');
+    await find(driver, By.css('nav[aria-label="Main navigation"]'));
+    await waitForText(driver, 'Manager · MGR001');
+    await screenshot(driver, 'ST-22-manager-dashboard');
   });
 });

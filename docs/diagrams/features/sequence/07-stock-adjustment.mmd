@@ -1,0 +1,20 @@
+sequenceDiagram
+  autonumber
+  actor U as User
+  participant C as React client
+  participant A as Express API
+  participant D as PostgreSQL
+  U->>C: Inventory: add / remove, quantity, reason
+  C->>C: Check new stock ≥ 0
+  C->>A: PATCH /api/products/:id/stock
+  A->>A: Check token and inventory: write
+  A->>D: BEGIN
+  A->>D: SELECT product FOR UPDATE
+  A->>D: UPDATE stock and stock-updated date
+  opt Stock changed
+    A->>D: INSERT adjustment ledger entry
+  end
+  A->>D: COMMIT
+  A->>D: Activity log: adjusted stock (+/−)
+  A-->>C: 200 new stock
+  C-->>U: Updated stock, alerts and badge

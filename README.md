@@ -112,13 +112,13 @@ Then run `npm start` in `server` and `npm run dev` in `client`, and open `http:/
 
 ## Testing
 
-StockIt has 157 automated tests at four levels. The full test plan, test-case catalogue, results and defect report are in [docs/TESTING.md](docs/TESTING.md).
+StockIt has 181 automated tests at four levels. The full test plan, test-case catalogue, results and defect report are in [docs/TESTING.md](docs/TESTING.md).
 
 | Folder | Command | What it runs |
 |---|---|---|
-| `server` | `npm test` | Jest unit and API integration tests (128) |
+| `server` | `npm test` | Jest unit and API integration tests (147) |
 | `server` | `npm run test:coverage` | The same, with a coverage report |
-| `e2e` | `npm test` | Selenium WebDriver browser tests (20), headless Microsoft Edge |
+| `e2e` | `npm test` | Selenium WebDriver browser tests (25), headless Microsoft Edge |
 | `e2e` | `npm run test:headed` | The Selenium tests with the browser visible |
 | `e2e` | `npm run test:junit` | JUnit 5 black-box API tests (9); needs a JDK |
 

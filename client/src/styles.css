@@ -311,3 +311,60 @@ form { display: grid; gap: 19px; }.field { display: grid; gap: 8px; }.field > sp
 /* The security-question dropdown should look like the inputs around it. */
 .input-wrap select { height: 100%; padding: 0; cursor: pointer; text-overflow: ellipsis; }
 
+/* ---- Sign-in role tabs: Admin / Manager / Employee / Create account ---- */
+.mode-switch { max-width: 100%; }
+.mode-switch button { white-space: nowrap; }
+@media (max-width: 430px) { .mode-switch { display: flex; width: 100%; } .mode-switch button { flex: 1 1 auto; padding: 10px 8px; font-size: 11.5px; } }
+
+/* ---- Reports: clickable stock cards and their item lists ---- */
+.summary-card.is-static:hover { transform: none; border-color: #e0e5db; box-shadow: 0 5px 16px rgba(25,55,40,.025); }
+button.summary-card { cursor: pointer; font: inherit; }
+.summary-card.is-active { border-color: #9fc36a; box-shadow: 0 0 0 3px rgba(159,195,106,.22); }
+.report-stock-list { margin-top: 22px; scroll-margin-top: 90px; }
+.report-stock-list .product-list-heading { align-items: center; }
+.report-stock-list .stock-status { font-size: 11px; }
+
+.auth-error + form { margin-top: 18px; }
+
+/* ---- Inventory: expiry alerts (same rules as the Dashboard badge) ---- */
+@media (min-width: 1101px) { .inventory-summary { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+.inventory-stat--button { font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.inventory-stat--button:hover { filter: brightness(.98); }
+.summary-icon.pink { color: #b0577a; background: #fbe8ef; }
+.stock-status.expiring { color: #9b5a16; background: #fdf0d9; }
+.stock-status.expiring i { background: #e0a043; }
+.stock-status.expired { color: #a03b4f; background: #fbe3e8; }
+.stock-status.expired i { background: #c9566c; }
+
+/* ---- Barcode scanner ---- */
+.scan-button { display: inline-flex; align-items: center; gap: 7px; }
+.scanner-modal { width: min(100%, 560px); padding: 24px; }
+.scanner-camera { margin: 16px 0 12px; }
+.scanner-camera select { height: 42px; padding: 0 10px; border: 1px solid #d9ddd2; border-radius: 4px; background: #fff; font: inherit; }
+.scanner-view { position: relative; overflow: hidden; border-radius: 6px; background: #0f2420; aspect-ratio: 4 / 3; }
+.scanner-view video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scanner-frame { position: absolute; inset: 28% 12%; border: 2px solid #cdeb5c; border-radius: 6px; box-shadow: 0 0 0 999px rgba(9,25,21,.35); }
+.scanner-message { display: flex; align-items: center; gap: 7px; margin: 12px 0 6px; color: #3c5f50; font-size: 13px; font-weight: 600; }
+.scanner-help { margin: 0; color: #7e897f; font-size: 12px; line-height: 1.5; }
+
+
+/* ---- Reports: profit, trend chart, extra tables ---- */
+.report-stock-cards { margin-top: 14px; }
+.report-note { margin: 12px 0 0; padding: 10px 13px; border-radius: 5px; color: #5c6b62; background: rgba(255,255,255,.85); border: 1px solid #e3e8df; font-size: 12px; line-height: 1.5; }
+.trend-legend { display: flex; gap: 14px; color: #6f7d74; font-size: 11px; }
+.trend-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.trend-legend i, .trend-bar span { display: block; border-radius: 2px; }
+.trend-legend i { width: 10px; height: 10px; }
+.trend-legend .revenue, .trend-bar .revenue { background: #b9d989; }
+.trend-legend .profit, .trend-bar .profit { background: #2f6b55; }
+.trend-chart { display: flex; align-items: flex-end; gap: 3px; height: 190px; padding: 16px 14px 0; border: 1px solid #e0e5db; border-radius: 5px; background: #fff; }
+.trend-bar { position: relative; flex: 1 1 0; min-width: 2px; height: 100%; display: flex; align-items: flex-end; }
+.trend-bar span { position: absolute; bottom: 0; left: 0; right: 0; }
+.trend-bar .profit { left: 25%; right: 25%; }
+.trend-bar:hover .revenue { background: #9fc36a; }
+.trend-axis { display: flex; justify-content: space-between; margin-top: 6px; color: #8a958c; font-size: 11px; }
+.report-columns { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; }
+@media (max-width: 1000px) { .report-columns { grid-template-columns: 1fr; } }
+.scanner-modal .panel-heading { align-items: center; }
+.report-columns > * { min-width: 0; }
+.scanner-repeat { display: inline-flex; align-items: center; gap: 7px; margin: 0 0 10px; }

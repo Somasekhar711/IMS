@@ -19,10 +19,12 @@ const HEADED = process.env.HEADED === '1';
 const STEP_DELAY_MS = HEADED ? Number(process.env.SLOWMO || 350) : 0;
 const pause = () => (STEP_DELAY_MS ? new Promise((resolve) => setTimeout(resolve, STEP_DELAY_MS)) : null);
 
-export async function buildDriver() {
+// fakeCamera: path to a .y4m video the browser should use as its camera.
+export async function buildDriver({ fakeCamera } = {}) {
   const browser = (process.env.BROWSER || 'edge').toLowerCase();
   const args = ['--window-size=1400,1000', '--disable-gpu'];
   if (!HEADED) args.push('--headless=new');
+  if (fakeCamera) args.push('--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', `--use-file-for-fake-video-capture=${fakeCamera}`);
 
   if (browser === 'chrome') {
     return new Builder().forBrowser('chrome').setChromeOptions(new chrome.Options().addArguments(...args)).build();
@@ -151,6 +153,18 @@ export async function createAccount(overrides = {}) {
   });
   if (!response.ok) throw new Error(`Could not create test account: ${response.status}`);
   return { ...account, ...(await response.json()) };
+}
+
+// Calls the API directly for test set-up (not the behaviour under test).
+export async function apiCall(method, path, body, token) {
+  const response = await fetch(`${API_URL}${path}`, {
+    method,
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(`${method} ${path} failed: ${response.status} ${data.message || ''}`);
+  return data;
 }
 
 // Saves a PNG of the current page as evidence for the test report.

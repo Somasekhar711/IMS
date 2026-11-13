@@ -10,6 +10,14 @@ import { DashboardPage } from './pages/DashboardPage';
 import { login, register, employeeLogin } from './api';
 import './styles.css';
 
+// Who is signing in: the account owner (admin) or a team member, by role.
+const authTabs = [
+  { view: 'login', label: 'Admin' },
+  { view: 'manager', label: 'Manager' },
+  { view: 'employee', label: 'Employee' },
+  { view: 'register', label: 'Create account' },
+];
+
 function App() {
   const [authView, setAuthView] = useState('login');
   const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('stockit_token'));
@@ -56,9 +64,9 @@ function App() {
     }
   };
 
-  const handleEmployeeLogin = async (warehouseId, empId, password) => {
+  const handleEmployeeLogin = async (warehouseId, empId, password, portal) => {
     try {
-      const user = await employeeLogin(warehouseId, empId, password);
+      const user = await employeeLogin(warehouseId, empId, password, portal);
       persistSession(user);
       setAuthError('');
       if (user.mustChangePassword) {
@@ -139,23 +147,24 @@ function App() {
             <ForceEmployeePasswordChange tempPassword={pendingEmployeeChange.tempPassword} onChanged={handleEmployeePasswordChanged} />
           ) : authView === 'forgot' ? (
             <ForgotPasswordPage onBackToLogin={() => switchMode('login')} />
-          ) : authView === 'employee' ? (
-            <EmployeeLoginPage onLogin={handleEmployeeLogin} onBackToLogin={() => switchMode('login')} error={authError} />
           ) : (
             <>
-              <div className="mode-switch" role="tablist" aria-label="Authentication mode">
-                <button className={authView === 'login' ? 'is-active' : ''} onClick={() => switchMode('login')} role="tab" aria-selected={authView === 'login'}>Sign in</button>
-                <button className={authView === 'register' ? 'is-active' : ''} onClick={() => switchMode('register')} role="tab" aria-selected={authView === 'register'}>Create account</button>
+              <div className="mode-switch" role="tablist" aria-label="Sign in as">
+                {authTabs.map(({ view, label }) => (
+                  <button key={view} className={authView === view ? 'is-active' : ''} onClick={() => switchMode(view)} role="tab" aria-selected={authView === view}>{label}</button>
+                ))}
               </div>
 
               {authView === 'register' ? (
                 <RegisterPage onRegister={handleRegister} error={authError} />
+              ) : authView === 'manager' || authView === 'employee' ? (
+                <EmployeeLoginPage key={authView} portal={authView} onLogin={handleEmployeeLogin} error={authError} />
               ) : (
                 <LoginPage onLogin={handleLogin} error={authError} onForgotPassword={() => switchMode('forgot')} />
               )}
 
-              <p className="mode-prompt">{authView === 'register' ? 'Already have an account?' : 'New to StockIt?'} <button onClick={() => switchMode(authView === 'register' ? 'login' : 'register')}>{authView === 'register' ? 'Sign in' : 'Create an account'}</button></p>
-              <p className="mode-prompt"><button type="button" onClick={() => switchMode('employee')}>Sign in as an employee</button></p>
+              {authView === 'login' && <p className="mode-prompt">New to StockIt? <button onClick={() => switchMode('register')}>Create an account</button></p>}
+              {authView === 'register' && <p className="mode-prompt">Already have an account? <button onClick={() => switchMode('login')}>Sign in</button></p>}
             </>
           )}
 

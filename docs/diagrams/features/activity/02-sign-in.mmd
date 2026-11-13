@@ -1,0 +1,30 @@
+flowchart TD
+  S(( )):::start --> Tab{"Which tab?"}
+  Tab -- Admin --> AdminForm["Enter email and password"]
+  Tab -- "Manager / Employee" --> TeamForm["Enter Warehouse ID, employee ID and password"]
+  AdminForm --> Filled{"All fields filled?"}
+  TeamForm --> Filled
+  Filled -- No --> Missing["Show: fields are required"]:::error
+  Missing --> Tab
+  Filled -- Yes --> Lookup["Look up the account"]
+  Lookup --> Found{"Account exists<br/>and is active?"}
+  Found -- No --> Invalid["Show: invalid details"]:::error
+  Found -- Yes --> Compare["Compare password with bcrypt hash"]
+  Compare --> Match{"Password matches?"}
+  Match -- No --> Invalid
+  Invalid --> Tab
+  Match -- Yes --> Role{"Role matches tab?"}
+  Role -- No --> Wrong["Show: use the Manager / Employee tab"]:::error
+  Wrong --> Tab
+  Role -- "Yes / Admin" --> Temp{"Temporary password?"}
+  Temp -- Yes --> NewPass["Set a new password<br/>(must meet the policy)"]
+  NewPass --> Token
+  Temp -- No --> Token["Issue JWT (7 days)"]
+  Token --> Store["Store token in the browser"]
+  Store --> Menu["Load permissions; hide modules<br/>the user cannot open"]
+  Menu --> Dash["Open the dashboard"]:::ok
+  Dash --> E((( ))):::stop
+  classDef start fill:#153A33,stroke:#153A33
+  classDef stop fill:#153A33,stroke:#153A33
+  classDef error fill:#FBE3E8,stroke:#A03B4F,color:#5A1E2A
+  classDef ok fill:#DDF0C8,stroke:#3F6B55

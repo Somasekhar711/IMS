@@ -10,6 +10,11 @@ import { passwordProblem } from '../config/passwordPolicy.js';
 
 const router = express.Router();
 
+// Team members sign in from the "Manager" or "Employee" tab. A manager-level
+// account (role manager or admin) must use the Manager tab and staff the
+// Employee tab, so each person lands in the portal that matches their role.
+const PORTAL_ROLES = { manager: ['manager', 'admin'], employee: ['staff'] };
+
 function generateWarehouseId() {
   return 'WH-' + crypto.randomBytes(4).toString('hex').toUpperCase().slice(0, 6);
 }
@@ -137,6 +142,11 @@ router.post('/employee-login', async (req, res) => {
   const warehouseId = req.body.warehouseId?.trim();
   const empId = req.body.empId?.trim();
   const { password } = req.body;
+  const portal = req.body.portal === undefined ? null : req.body.portal;
+
+  if (portal !== null && !PORTAL_ROLES[portal]) {
+    return res.status(400).json({ message: 'portal must be "manager" or "employee"' });
+  }
 
   if (!warehouseId || !empId || !password) {
     return res.status(400).json({ message: 'Warehouse ID, employee ID, and password are required' });
@@ -151,7 +161,7 @@ router.post('/employee-login', async (req, res) => {
     const ownerId = ownerResult.rows[0].id;
 
     const memberResult = await pool.query(
-      'SELECT id, name, status, password_hash, must_change_password FROM team_members WHERE owner_user_id = $1 AND UPPER(emp_id) = UPPER($2)',
+      'SELECT id, name, role, status, password_hash, must_change_password FROM team_members WHERE owner_user_id = $1 AND UPPER(emp_id) = UPPER($2)',
       [ownerId, empId]
     );
 
@@ -170,6 +180,15 @@ router.post('/employee-login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid warehouse ID, employee ID, or password' });
     }
 
+    // Checked only after the password, so a wrong tab never reveals that an ID exists.
+    if (portal && !PORTAL_ROLES[portal].includes(member.role)) {
+      return res.status(403).json({
+        message: portal === 'manager'
+          ? 'This is not a manager account. Use the Employee tab to sign in.'
+          : 'This is a manager account. Use the Manager tab to sign in.',
+      });
+    }
+
     const token = jwt.sign(
       { id: ownerId, actorType: 'employee', teamMemberId: member.id },
       process.env.JWT_SECRET,
@@ -179,6 +198,7 @@ router.post('/employee-login', async (req, res) => {
     return res.json({
       actorType: 'employee',
       fullName: member.name,
+      role: member.role,
       empId,
       warehouseId,
       mustChangePassword: member.must_change_password,

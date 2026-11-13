@@ -1,4 +1,6 @@
+import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, test } from '@jest/globals';
+import { ean13, writeBarcodeVideo } from '../helpers/fakeCamera.js';
 import {
   By, buildDriver, openFresh, waitForText, textIsAbsent, find, field, type, click, choose, textOf, button, placeholder,
   openModule, signIn, createAccount, screenshot, apiCall,
@@ -9,13 +11,17 @@ async function currentStock(driver, productName) {
   return Number(await textOf(driver, By.xpath(`//table[contains(@class,"inventory-table")]//tr[td/strong[normalize-space()="${productName}"]]/td[3]/strong`)));
 }
 
+const FAKE_CAMERA = path.resolve('.fake-camera.y4m');
+const SCANNED_CODE = ean13('210987654321'); // a valid EAN-13 that Open Food Facts does not know
+
 describe('Selenium: product, inventory and sales workflow', () => {
   let driver;
   let account;
 
   beforeAll(async () => {
     account = await createAccount({ fullName: 'Store Owner' });
-    driver = await buildDriver();
+    writeBarcodeVideo(FAKE_CAMERA, SCANNED_CODE);
+    driver = await buildDriver({ fakeCamera: FAKE_CAMERA });
     await openFresh(driver);
     await signIn(driver, account.email, account.password);
     await find(driver, By.css('nav[aria-label="Main navigation"]'));
@@ -136,7 +142,7 @@ describe('Selenium: product, inventory and sales workflow', () => {
     await apiCall('POST', '/products', { hsn: 'OUT-1', itemName: 'Butter 100g', itemPrice: 58, stockPresent: 0, thresholdStock: 5 }, account.token);
 
     await openModule(driver, 'Reports');
-    await waitForText(driver, 'Sales, purchases, and stock health at a glance.');
+    await waitForText(driver, 'Sales, profit, purchases, and stock health at a glance.');
 
     await click(driver, By.xpath('//button[contains(@class,"summary-card")][.//span[normalize-space()="Low stock"]]'));
     await waitForText(driver, 'Low stock items (1)');
@@ -152,5 +158,46 @@ describe('Selenium: product, inventory and sales workflow', () => {
     expect(outList).toContain('Butter 100g');
     expect(outList).not.toContain('Paneer 200g');
     await screenshot(driver, 'ST-21-out-of-stock-list');
+  });
+
+  test('ST-23 scanning a barcode with the camera fills in the Barcode field of a new product', async () => {
+    await openModule(driver, 'Add Product');
+    await click(driver, button('Scan barcode'));
+    await find(driver, By.css('[aria-label="Barcode scanner"] video'));
+    await waitForText(driver, `Scanned ${SCANNED_CODE}`, 20000);
+    const form = '(//form[contains(@class,"product-form")])[1]';
+    expect(await (await field(driver, 'Barcode', form)).getAttribute('value')).toBe(SCANNED_CODE);
+    await screenshot(driver, 'ST-23-barcode-scanned');
+  });
+
+  test('ST-24 the Inventory badge matches the alerts shown on the Inventory page', async () => {
+    await driver.navigate().refresh(); // reload products added through the API in ST-21
+    const badge = Number(await textOf(driver, By.css('.nav-badge')));
+    expect(badge).toBeGreaterThan(0);
+    await openModule(driver, 'Inventory');
+    const tile = async (label) => Number(await textOf(driver, By.xpath(`//*[contains(@class,"inventory-stat")][.//small[normalize-space()="${label}"]]//strong`)));
+    expect(badge).toBe(await tile('Low stock') + await tile('Out of stock') + await tile('Expired / expiring soon'));
+  });
+
+  test('ST-25 a scanned new product can be saved, and scanning it again opens it for updating', async () => {
+    await openModule(driver, 'Add Product');
+    await click(driver, button('Scan barcode'));
+    await waitForText(driver, `Scanned ${SCANNED_CODE}`, 20000);
+    const form = '(//form[contains(@class,"product-form")])[1]';
+    await type(driver, await field(driver, 'HSN', form), 'SCAN-1');
+    await type(driver, await field(driver, 'Item name', form), 'Scanned Notebook');
+    await type(driver, await field(driver, 'Item price', form), '45');
+    await type(driver, await field(driver, 'Cost price', form), '30');
+    await click(driver, By.css('button.product-submit'));
+    await waitForText(driver, 'View products');
+    await find(driver, By.xpath('//table//td/strong[normalize-space()="Scanned Notebook"]'));
+
+    // The same barcode is not re-read on its own; the user confirms with "Use … again".
+    await openModule(driver, 'Add Product');
+    await click(driver, button('Scan barcode'));
+    await click(driver, button(`Use ${SCANNED_CODE} again`));
+    await waitForText(driver, `Barcode ${SCANNED_CODE} is already "Scanned Notebook"`, 20000);
+    await waitForText(driver, 'Existing details loaded for Scanned Notebook.');
+    await screenshot(driver, 'ST-25-rescan-existing');
   });
 });

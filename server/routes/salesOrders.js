@@ -104,7 +104,7 @@ router.post('/', authRequired, requirePermission('salesOrders', 'write'), async 
 
     const productIds = [...new Set(items.map((item) => item.productId))];
     const productsResult = await client.query(
-      'SELECT id, item_name, stock_present FROM products WHERE owner_user_id = $1 AND id = ANY($2::bigint[])',
+      'SELECT id, item_name, stock_present, cost_price FROM products WHERE owner_user_id = $1 AND id = ANY($2::bigint[])',
       [req.user.id, productIds]
     );
     if (productsResult.rowCount !== productIds.length) {
@@ -135,12 +135,15 @@ router.post('/', authRequired, requirePermission('salesOrders', 'write'), async 
     `, [req.user.id, customerId || null, orderDate || new Date().toISOString().slice(0, 10), reference?.trim() || null, notes?.trim() || null, totalAmount]);
 
     const order = orderResult.rows[0];
+    // The cost at the time of sale is kept on each line, so gross profit for
+    // this sale does not change if the product's cost price changes later.
+    const costByProduct = productsResult.rows.reduce((map, row) => ({ ...map, [row.id]: row.cost_price }), {});
 
     for (const item of items) {
       await client.query(`
-        INSERT INTO sales_order_items (sales_order_id, product_id, owner_user_id, quantity, unit_price, line_total)
-        VALUES ($1, $2, $3, $4, $5, $6)
-      `, [order.id, item.productId, req.user.id, item.quantity, item.unitPrice, item.lineTotal]);
+        INSERT INTO sales_order_items (sales_order_id, product_id, owner_user_id, quantity, unit_price, line_total, unit_cost)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `, [order.id, item.productId, req.user.id, item.quantity, item.unitPrice, item.lineTotal, costByProduct[item.productId] ?? null]);
 
       const stockResult = await client.query(`
         UPDATE products

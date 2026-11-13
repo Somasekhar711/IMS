@@ -140,6 +140,7 @@ async function seedMainAccount() {
   for (const [hsn, itemName, itemCategory, itemPrice, gst, discount, stock, threshold, mfd, expiry] of PRODUCTS) {
     const created = await call('POST', '/products', {
       hsn, itemName, itemCategory, itemPrice, gst, discount,
+      costPrice: Math.round(itemPrice * 0.72 * 100) / 100, // purchases update this to the latest cost
       mfd: day(mfd), expiryDate: expiry === null ? '' : day(expiry), stockUpdatedDate: day(-75),
       stockPresent: stock, thresholdStock: threshold,
     }, token);

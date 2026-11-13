@@ -27,6 +27,7 @@ import {
   UsersRound,
   X,
 } from 'lucide-react';
+import { getExpiryAlert, summariseAlerts } from '../stockAlerts';
 import { AddProductPage } from './AddProductPage';
 import { CategoriesPage } from './CategoriesPage';
 import { SuppliersPage } from './SuppliersPage';
@@ -120,21 +121,19 @@ function DashboardContent({ user, onLogout, onProfileUpdated }) {
   const productCount = products.length;
   const stockUnits = products.reduce((total, product) => total + (Number(product.stockPresent) || 0), 0);
   const inventoryValue = products.reduce((total, product) => total + ((Number(product.itemPrice) || 0) * (Number(product.stockPresent) || 0)), 0);
-  const outOfStockItems = products.filter((product) => Number(product.stockPresent) === 0);
-  const lowStockItems = products.filter((product) => Number(product.stockPresent) > 0 && Number(product.stockPresent) <= Number(product.thresholdStock));
-  const expiringSoonItems = products.filter((product) => {
-    if (!product.expiryDate) return false;
-    const daysUntilExpiry = (new Date(product.expiryDate) - new Date()) / 86400000;
-    return daysUntilExpiry >= 0 && daysUntilExpiry <= 30;
-  });
+  const alerts = summariseAlerts(products);
+  const outOfStockItems = alerts.outOfStock;
+  const lowStockItems = alerts.lowStock;
+  const expiringSoonItems = alerts.expiring;
   const lowStockCount = lowStockItems.length;
   const outOfStockCount = outOfStockItems.length;
   const expiringSoonCount = expiringSoonItems.length;
-  const inventoryAlerts = lowStockCount + outOfStockCount + expiringSoonCount;
+  const inventoryAlerts = alerts.total;
+  const inventoryAlertSummary = `${lowStockCount} low stock · ${outOfStockCount} out of stock · ${expiringSoonCount} expired or expiring soon`;
   const notifications = [
     ...outOfStockItems.map((product) => ({ id: `out-${product.id}`, icon: X, tone: 'red', title: `${product.itemName} is out of stock`, message: 'Replenish stock to avoid missed sales.' })),
     ...lowStockItems.map((product) => ({ id: `low-${product.id}`, icon: AlertTriangle, tone: 'orange', title: `${product.itemName} is running low`, message: `${product.stockPresent} units left (threshold ${product.thresholdStock}).` })),
-    ...expiringSoonItems.map((product) => ({ id: `exp-${product.id}`, icon: Clock, tone: 'pink', title: `${product.itemName} expires soon`, message: `Expires on ${product.expiryDate}.` })),
+    ...expiringSoonItems.map((product) => ({ id: `exp-${product.id}`, icon: Clock, tone: 'pink', title: `${product.itemName}: ${getExpiryAlert(product).label.toLowerCase()}`, message: `Expiry date ${product.expiryDate}.` })),
   ];
   const searchResults = searchQuery.trim()
     ? products.filter((item) => `${item.itemName} ${item.hsn} ${item.itemCategory}`.toLowerCase().includes(searchQuery.trim().toLowerCase())).slice(0, 6)
@@ -145,7 +144,7 @@ function DashboardContent({ user, onLogout, onProfileUpdated }) {
     { label: 'Inventory value', value: `${currencySymbol}${inventoryValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`, detail: 'Price × current stock', icon: DollarSign, tone: 'gold', module: 'Inventory' },
     { label: 'Low stock', value: lowStockCount.toLocaleString(), detail: 'At or below threshold', icon: AlertTriangle, tone: 'orange', module: 'Inventory' },
     { label: 'Out of stock', value: outOfStockCount.toLocaleString(), detail: 'Requires replenishment', icon: X, tone: 'red', module: 'Inventory' },
-    { label: 'Expiring soon', value: expiringSoonCount.toLocaleString(), detail: 'Within the next 30 days', icon: Bell, tone: 'pink', module: 'Inventory' },
+    { label: 'Expiring soon', value: expiringSoonCount.toLocaleString(), detail: 'Expired or due in 30 days', icon: Bell, tone: 'pink', module: 'Inventory' },
   ];
   const displayName = user?.fullName || 'User';
   const initials = displayName.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
@@ -255,7 +254,7 @@ function DashboardContent({ user, onLogout, onProfileUpdated }) {
             >
               <Icon size={17} />
               <span>{label === 'Settings' && isEmployee ? 'My Account' : label}</span>
-              {label === 'Inventory' && inventoryAlerts > 0 && <span className="nav-badge">{inventoryAlerts}</span>}
+              {label === 'Inventory' && inventoryAlerts > 0 && <span className="nav-badge" title={inventoryAlertSummary} aria-label={`${inventoryAlerts} inventory alerts: ${inventoryAlertSummary}`}>{inventoryAlerts}</span>}
             </button>
           ))}
         </nav>

@@ -1,7 +1,9 @@
 export const emptyProduct = {
   hsn: '',
+  barcode: '',
   itemName: '',
   itemPrice: '',
+  costPrice: '',
   itemCategory: '',
   gst: '',
   discount: '',
@@ -14,8 +16,10 @@ export const emptyProduct = {
 
 export const productFields = [
   { key: 'hsn', label: 'HSN', placeholder: 'e.g. 1905', type: 'text' },
+  { key: 'barcode', label: 'Barcode', placeholder: 'Scan or type', type: 'text' },
   { key: 'itemName', label: 'Item name', placeholder: 'Product name', type: 'text' },
   { key: 'itemPrice', label: 'Item price', placeholder: '0.00', type: 'number' },
+  { key: 'costPrice', label: 'Cost price', placeholder: '0.00', type: 'number' },
   { key: 'itemCategory', label: 'Item category', placeholder: 'e.g. Grocery', type: 'text' },
   { key: 'gst', label: 'GST%', placeholder: '0', type: 'number' },
   { key: 'discount', label: 'Discount%', placeholder: '0', type: 'number' },

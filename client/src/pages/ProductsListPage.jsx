@@ -27,7 +27,7 @@ function ProductsListPage({ products, onUpdateProduct, onDeleteProduct, onAddPro
     ? categorySuggestions.filter((category) => category.name.toLowerCase().includes((editingProduct?.itemCategory || '').trim().toLowerCase())).slice(0, 6)
     : [];
 
-  const visibleProducts = products.filter((item) => `${item.itemName} ${item.hsn} ${item.itemCategory}`.toLowerCase().includes(searchTerm.toLowerCase()));
+  const visibleProducts = products.filter((item) => `${item.itemName} ${item.hsn} ${item.itemCategory} ${item.barcode || ''}`.toLowerCase().includes(searchTerm.toLowerCase()));
   const updateField = (event) => setEditingProduct((current) => ({ ...current, [event.target.name]: event.target.value }));
   const saveProduct = (event) => {
     event.preventDefault();

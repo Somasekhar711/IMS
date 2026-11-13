@@ -130,10 +130,11 @@ router.post('/', authRequired, requirePermission('purchaseOrders', 'write'), asy
 
       const stockResult = await client.query(`
         UPDATE products
-        SET stock_present = stock_present + $1, stock_updated_date = CURRENT_DATE, updated_at = NOW()
+        SET stock_present = stock_present + $1, stock_updated_date = CURRENT_DATE, updated_at = NOW(),
+            cost_price = $4
         WHERE id = $2 AND owner_user_id = $3
         RETURNING stock_present
-      `, [item.quantity, item.productId, req.user.id]);
+      `, [item.quantity, item.productId, req.user.id, item.unitCost]); // latest purchase cost becomes the cost price
 
       await client.query(`
         INSERT INTO inventory_movements (owner_user_id, product_id, movement_type, quantity_change, reference_type, reference_id, note, stock_after)

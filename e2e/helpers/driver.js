@@ -19,10 +19,12 @@ const HEADED = process.env.HEADED === '1';
 const STEP_DELAY_MS = HEADED ? Number(process.env.SLOWMO || 350) : 0;
 const pause = () => (STEP_DELAY_MS ? new Promise((resolve) => setTimeout(resolve, STEP_DELAY_MS)) : null);
 
-export async function buildDriver() {
+// fakeCamera: path to a .y4m video the browser should use as its camera.
+export async function buildDriver({ fakeCamera } = {}) {
   const browser = (process.env.BROWSER || 'edge').toLowerCase();
   const args = ['--window-size=1400,1000', '--disable-gpu'];
   if (!HEADED) args.push('--headless=new');
+  if (fakeCamera) args.push('--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', `--use-file-for-fake-video-capture=${fakeCamera}`);
 
   if (browser === 'chrome') {
     return new Builder().forBrowser('chrome').setChromeOptions(new chrome.Options().addArguments(...args)).build();

@@ -1,0 +1,22 @@
+flowchart TD
+  S(( )):::start --> What{"Which directory?"}
+  What --> Action{"Add / edit or delete?"}
+  Action -- "Add / edit" --> Form["Enter name and details<br/>(suppliers: linked products)"]
+  Form --> Name{"Name filled?"}
+  Name -- No --> E400["Show: name is required (400)"]:::error
+  E400 --> Form
+  Name -- Yes --> Unique{"Name unique in this account<br/>(any letter case)?"}
+  Unique -- No --> E409["Show: already exists (409)"]:::error
+  E409 --> Form
+  Unique -- Yes --> Save["Save; suppliers replace their product links"]
+  Save --> Log1["Write activity log"]:::ok
+  Log1 --> E1((( ))):::stop
+  Action -- Delete --> InUse{"Still in use?<br/>category → products<br/>supplier → linked products<br/>customer → sales orders"}
+  InUse -- Yes --> Block["Refuse with the count in use (409)"]:::error
+  Block --> E2((( ))):::stop
+  InUse -- No --> Del["Delete; write activity log"]:::ok
+  Del --> E2
+  classDef start fill:#153A33,stroke:#153A33
+  classDef stop fill:#153A33,stroke:#153A33
+  classDef error fill:#FBE3E8,stroke:#A03B4F,color:#5A1E2A
+  classDef ok fill:#DDF0C8,stroke:#3F6B55

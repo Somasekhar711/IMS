@@ -1,0 +1,25 @@
+flowchart TD
+  S(( )):::start --> Open["Admin opens Users & Roles"]
+  Open --> Act{"Action?"}
+  Act -- "Add member" --> Details["Enter name, role, status, contact"]
+  Details --> Login{"Give a login?"}
+  Login -- No --> SaveR["Save as roster entry only"]:::ok
+  SaveR --> E1((( ))):::stop
+  Login -- Yes --> Emp["Enter employee ID; set none / read / write<br/>for each of the 9 modules"]
+  Emp --> UniqueID{"Employee ID unique?"}
+  UniqueID -- No --> E409["Show: ID already in use (409)"]:::error
+  E409 --> Emp
+  UniqueID -- Yes --> Temp["Generate a 10-character temporary password;<br/>store its hash; must change = true"]
+  Temp --> Show["Show the temporary password once"]:::ok
+  Show --> E2((( ))):::stop
+  Act -- "Edit / disable" --> Change["Change role, status or permissions"]
+  Change --> Apply["Saved; applies on the member's next request"]:::ok
+  Apply --> E3((( ))):::stop
+  Act -- "Reset password" --> Reset["New temporary password; must change = true"]:::ok
+  Reset --> E3
+  Act -- Remove --> Rem["Delete member; their log entries keep the name"]:::ok
+  Rem --> E3
+  classDef start fill:#153A33,stroke:#153A33
+  classDef stop fill:#153A33,stroke:#153A33
+  classDef error fill:#FBE3E8,stroke:#A03B4F,color:#5A1E2A
+  classDef ok fill:#DDF0C8,stroke:#3F6B55

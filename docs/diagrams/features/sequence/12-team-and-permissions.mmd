@@ -1,0 +1,22 @@
+sequenceDiagram
+  autonumber
+  actor AD as Admin
+  participant C as React client
+  participant A as Express API
+  participant D as PostgreSQL
+  actor M as Team member
+  AD->>C: Add member with login, employee ID, permissions
+  C->>A: POST /api/team-members
+  A->>A: Admin only, normalise permissions
+  A->>A: Generate temporary password, bcrypt hash
+  A->>D: INSERT team member (must change = true)
+  A->>D: Activity log
+  A-->>C: 201 member + temporary password (once)
+  C-->>AD: Show temporary password
+  AD-->>M: Share Warehouse ID, ID and password
+  AD->>C: Later: change permissions or disable
+  C->>A: PUT /api/team-members/:id
+  A->>D: UPDATE permissions / status
+  M->>A: Next request with existing token
+  A->>D: Read current status and permissions
+  A-->>M: Allowed, or 403 if removed / disabled

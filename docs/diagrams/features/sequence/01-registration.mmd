@@ -1,0 +1,21 @@
+sequenceDiagram
+  autonumber
+  actor U as Owner
+  participant C as React client
+  participant A as Express API
+  participant D as PostgreSQL
+  C->>A: GET /api/auth/security-questions
+  A-->>C: 7 questions
+  U->>C: Fill form, accept terms, Create workspace
+  C->>C: Check password rules and match
+  C->>A: POST /api/auth/register
+  A->>A: Validate fields, password policy, question
+  A->>D: SELECT user WHERE lower(email) = …
+  D-->>A: none
+  A->>A: bcrypt hash password and answer
+  A->>D: INSERT user with new Warehouse ID
+  D-->>A: user row
+  A->>A: Sign JWT (7 days)
+  A-->>C: 201 user, Warehouse ID, token
+  C->>C: Store token and user
+  C-->>U: Dashboard

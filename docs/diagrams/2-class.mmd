@@ -7,6 +7,7 @@ classDiagram
     +email
     -passwordHash
     +warehouseId
+    +currencySymbol
     +register()
     +login()
     +resetPassword()
@@ -18,6 +19,7 @@ classDiagram
     +role
     +status
     +permissions
+    +mustChangePassword
     +login()
     +changePassword()
   }
@@ -29,8 +31,10 @@ classDiagram
   class Product {
     +id
     +hsn
+    +barcode
     +itemName
     +itemPrice
+    +costPrice
     +gstPercent
     +stockPresent
     +thresholdStock
@@ -64,9 +68,15 @@ classDiagram
     +post()
     +reverse()
   }
-  class OrderItem {
+  class PurchaseOrderItem {
+    +quantity
+    +unitCost
+    +lineTotal
+  }
+  class SalesOrderItem {
     +quantity
     +unitPrice
+    +unitCost
     +lineTotal
   }
   class InventoryMovement {
@@ -87,11 +97,13 @@ classDiagram
   User "1" --> "*" TeamMember : employs
   User "1" --> "*" Product : owns
   User "1" --> "*" ActivityLog : audits
+  TeamMember "1" --> "*" ActivityLog : performs
   Category "1" --> "*" Product : groups
   Supplier "*" --> "*" Product : supplies
   Supplier "1" --> "*" PurchaseOrder : receives
   Customer "1" --> "*" SalesOrder : places
-  PurchaseOrder "1" *-- "1..*" OrderItem : contains
-  SalesOrder "1" *-- "1..*" OrderItem : contains
-  OrderItem "*" --> "1" Product : refers to
+  PurchaseOrder "1" *-- "1..*" PurchaseOrderItem : contains
+  SalesOrder "1" *-- "1..*" SalesOrderItem : contains
+  PurchaseOrderItem "*" --> "1" Product : refers to
+  SalesOrderItem "*" --> "1" Product : refers to
   Product "1" --> "*" InventoryMovement : records

@@ -1,18 +1,27 @@
 flowchart TD
-  Start(( )):::start --> Enter["Enter email and password"]
-  Enter --> Filled{"Both fields filled?"}
-  Filled -- No --> Missing["Show: email and password are required"]
-  Missing --> Enter
-  Filled -- Yes --> Lookup["Look up account by email"]
-  Lookup --> Found{"Account exists?"}
-  Found -- No --> Invalid["Show: invalid email or password"]
+  Start(( )):::start --> Tab{"Which tab?"}
+  Tab -- Admin --> AdminForm["Enter email and password"]
+  Tab -- "Manager / Employee" --> TeamForm["Enter warehouse ID, employee ID and password"]
+  AdminForm --> Filled{"All fields filled?"}
+  TeamForm --> Filled
+  Filled -- No --> Missing["Show: fields are required"]
+  Missing --> Tab
+  Filled -- Yes --> Lookup["Look up the account"]
+  Lookup --> Found{"Account exists and is active?"}
+  Found -- No --> Invalid["Show: invalid details"]
   Found -- Yes --> Compare["Compare password with stored bcrypt hash"]
   Compare --> Match{"Password matches?"}
   Match -- No --> Invalid
-  Invalid --> Enter
-  Match -- Yes --> Token["Issue signed token (JWT, 7 days)"]
+  Invalid --> Tab
+  Match -- Yes --> RoleCheck{"Role matches tab?"}
+  RoleCheck -- No --> WrongTab["Show: use the Manager / Employee tab"]
+  WrongTab --> Tab
+  RoleCheck -- "Yes / Admin" --> Temp{"Temporary password?"}
+  Temp -- Yes --> NewPass["Set a new password"]
+  NewPass --> Token
+  Temp -- No --> Token["Issue signed token (JWT, 7 days)"]
   Token --> Store["Store token in the browser"]
-  Store --> Dash["Open dashboard"]
+  Store --> Dash["Open dashboard with permitted modules"]
   Dash --> End(((" "))):::stop
 
   classDef start fill:#153A33,stroke:#153A33

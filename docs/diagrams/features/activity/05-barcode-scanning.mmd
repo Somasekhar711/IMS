@@ -1,0 +1,33 @@
+flowchart TD
+  S(( )):::start --> Click["Click Scan barcode"]
+  Click --> Secure{"Page on HTTPS or localhost?"}
+  Secure -- No --> NoCam["Show: camera needs https or localhost"]:::error
+  NoCam --> E0((( ))):::stop
+  Secure -- Yes --> Perm{"Camera permission allowed?"}
+  Perm -- No --> Blocked["Show: camera access was blocked"]:::error
+  Blocked --> E0
+  Perm -- Yes --> List["List cameras; pick the saved one,<br/>else DroidCam Video, else the first"]
+  List --> Start["Start HD video (up to 1920×1080)"]
+  Start --> Read["Read only the green-box area<br/>about 6 times a second"]
+  Read --> Found{"Barcode decoded?"}
+  Found -- No --> Read
+  Found -- Yes --> Same{"Same as the barcode<br/>accepted last time?"}
+  Same -- Yes --> Again["Show: that is the barcode you just scanned<br/>+ Use … again button"]
+  Again --> Choice{"User clicks Use … again?"}
+  Choice -- No --> Read
+  Choice -- Yes --> Accept
+  Same -- No --> Accept["Accept: stop camera, remember the code"]
+  Accept --> InCat{"Barcode in the catalogue?"}
+  InCat -- Yes --> Open["Open that product for updating"]:::ok
+  Open --> E1((( ))):::stop
+  InCat -- No --> Fill["Fill the Barcode field;<br/>clear a name the previous scan filled"]
+  Fill --> OFF["Look up the barcode in Open Food Facts<br/>(5 s timeout)"]
+  OFF --> Hit{"Product found?"}
+  Hit -- Yes --> Name["Fill Item name: brand (not company)<br/>+ product name + quantity, without the ℮ mark"]:::ok
+  Hit -- No --> Manual["Show: not found, enter the details"]
+  Name --> E2((( ))):::stop
+  Manual --> E2
+  classDef start fill:#153A33,stroke:#153A33
+  classDef stop fill:#153A33,stroke:#153A33
+  classDef error fill:#FBE3E8,stroke:#A03B4F,color:#5A1E2A
+  classDef ok fill:#DDF0C8,stroke:#3F6B55

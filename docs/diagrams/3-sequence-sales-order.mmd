@@ -8,19 +8,21 @@ sequenceDiagram
   U->>C: Fill sales order form and save
   C->>A: POST /api/sales-orders (with token)
   A->>A: Verify token
-  A->>D: Read employee permission
-  D-->>A: salesOrders = write
+  opt Signed in as a team member
+    A->>D: Read status and permissions
+    D-->>A: active, salesOrders = write
+  end
   A->>D: BEGIN transaction
-  A->>D: Read stock of each product
-  D-->>A: Stock levels
+  A->>D: Read stock and cost price of each product
+  D-->>A: Stock levels and cost prices
 
   alt Quantity exceeds stock
     A->>D: ROLLBACK
-    A-->>C: 400 Not enough stock
+    A-->>C: 400 Not enough stock (N available)
     C-->>U: Show error message
   else Stock is sufficient
-    A->>D: Insert order and line items
-    A->>D: Reduce product stock
+    A->>D: Insert order and lines (with unit cost)
+    A->>D: Reduce stock (only if still enough)
     A->>D: Insert stock ledger entries
     A->>D: COMMIT
     A->>D: Insert activity log entry

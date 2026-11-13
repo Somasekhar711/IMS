@@ -1,0 +1,24 @@
+flowchart TD
+  S(( )):::start --> Open["Open the Create account tab"]
+  Open --> Fill["Enter full name, email, password, confirmation,<br/>security question and answer; accept terms"]
+  Fill --> Rules{"Password meets all four rules<br/>and confirmation matches?"}
+  Rules -- No --> Disabled["Create workspace stays disabled;<br/>failed rules shown in red"]:::error
+  Disabled --> Fill
+  Rules -- Yes --> Submit["Submit to POST /api/auth/register"]
+  Submit --> Server{"Server: all fields present,<br/>password policy met, question valid?"}
+  Server -- No --> E400["Show the reason (400)"]:::error
+  E400 --> Fill
+  Server -- Yes --> Exists{"Email already registered<br/>(any letter case)?"}
+  Exists -- Yes --> E409["Show: Email is already registered (409)"]:::error
+  E409 --> Fill
+  Exists -- No --> Hash["Hash password and security answer with bcrypt"]
+  Hash --> WH["Generate a unique Warehouse ID"]
+  WH --> Insert["Save the Admin account"]
+  Insert --> Token["Issue JWT (7 days)"]
+  Token --> Store["Store token and user in the browser"]
+  Store --> Dash["Open the dashboard"]:::ok
+  Dash --> E((( ))):::stop
+  classDef start fill:#153A33,stroke:#153A33
+  classDef stop fill:#153A33,stroke:#153A33
+  classDef error fill:#FBE3E8,stroke:#A03B4F,color:#5A1E2A
+  classDef ok fill:#DDF0C8,stroke:#3F6B55

@@ -1,0 +1,26 @@
+sequenceDiagram
+  autonumber
+  actor U as User
+  participant C as Reports page
+  participant A as Express API
+  participant D as PostgreSQL
+  U->>C: Choose period
+  C->>A: GET /api/reports/summary?range=30
+  A->>A: Check reports: read
+  par Run in parallel
+    A->>D: Sales and purchase totals
+  and
+    A->>D: Units, COGS, gross profit, uncosted revenue
+  and
+    A->>D: Top products, categories, top customers
+  and
+    A->>D: Daily or monthly trend
+  and
+    A->>D: Stock counts, stock value, low / out / expiring lists
+  end
+  D-->>A: Aggregates
+  A->>A: Average order value, margin, potential profit
+  A-->>C: Summary JSON
+  C->>C: Fill trend gaps, draw cards, chart, tables
+  U->>C: Click Low stock card
+  C-->>U: List of low-stock products

@@ -1,0 +1,29 @@
+flowchart TD
+  S(( )):::start --> Act{"Create or delete?"}
+  Act -- Create --> Form["Choose customer or walk-in, date, reference;<br/>add lines: product, quantity, unit price"]
+  Form --> Lines{"Lines valid?"}
+  Lines -- No --> E400["Show the problem (400)"]:::error
+  E400 --> Form
+  Lines -- Yes --> Begin["Begin transaction"]
+  Begin --> Read["Read stock and cost price of the products"]
+  Read --> Sum["Add up quantities per product across lines"]
+  Sum --> Enough{"Enough stock for every product?"}
+  Enough -- No --> RB["Roll back; show: Not enough stock for X:<br/>N available, M requested (400)"]:::error
+  RB --> Form
+  Enough -- Yes --> Order["Insert the order with its total"]
+  Order --> Each["For each line: insert item with unit cost,<br/>reduce stock only if still enough"]
+  Each --> Race{"Stock reduced for every line?"}
+  Race -- No --> RB409["Roll back; show: just sold elsewhere (409)"]:::error
+  RB409 --> Form
+  Race -- Yes --> Ledger["Write sale ledger entries"]
+  Ledger --> Commit["Commit; write activity log"]
+  Commit --> Done["Show success; stock and alerts update"]:::ok
+  Done --> E1((( ))):::stop
+  Act -- Delete --> Confirm["Confirm: this returns the stock it sold"]
+  Confirm --> Rev["Begin; add quantities back; delete its ledger<br/>entries and the order; commit"]
+  Rev --> Log["Write activity log"]:::ok
+  Log --> E2((( ))):::stop
+  classDef start fill:#153A33,stroke:#153A33
+  classDef stop fill:#153A33,stroke:#153A33
+  classDef error fill:#FBE3E8,stroke:#A03B4F,color:#5A1E2A
+  classDef ok fill:#DDF0C8,stroke:#3F6B55

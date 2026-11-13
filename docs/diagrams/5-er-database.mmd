@@ -28,6 +28,7 @@ erDiagram
     bigint id PK
     bigint owner_user_id FK
     varchar emp_id
+    varchar role
     varchar status
     jsonb permissions
   }
@@ -36,9 +37,19 @@ erDiagram
     bigint owner_user_id FK
     bigint category_id FK
     varchar hsn
+    varchar barcode
     numeric item_price
+    numeric cost_price
     integer stock_present
     integer threshold_stock
+    date expiry_date
+  }
+  PURCHASE_ORDER_ITEMS {
+    bigint id PK
+    bigint purchase_order_id FK
+    bigint product_id FK
+    integer quantity
+    numeric unit_cost
   }
   SALES_ORDERS {
     bigint id PK
@@ -52,6 +63,7 @@ erDiagram
     bigint product_id FK
     integer quantity
     numeric unit_price
+    numeric unit_cost
   }
   INVENTORY_MOVEMENTS {
     bigint id PK

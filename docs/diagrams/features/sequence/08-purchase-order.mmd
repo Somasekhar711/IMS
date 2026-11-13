@@ -1,0 +1,21 @@
+sequenceDiagram
+  autonumber
+  actor U as User
+  participant C as React client
+  participant A as Express API
+  participant D as PostgreSQL
+  U->>C: Supplier, lines (product, qty, unit cost), Save
+  C->>A: POST /api/purchase-orders
+  A->>A: Check token and purchaseOrders: write, validate lines
+  A->>D: BEGIN
+  A->>D: Check supplier and products belong to account
+  A->>D: INSERT purchase order (total)
+  loop Each line
+    A->>D: INSERT purchase order item
+    A->>D: UPDATE stock + qty, cost price = unit cost
+    A->>D: INSERT purchase ledger entry
+  end
+  A->>D: COMMIT
+  A->>D: Activity log
+  A-->>C: 201 order
+  C-->>U: Order listed, stock increased

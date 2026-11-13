@@ -1,0 +1,25 @@
+sequenceDiagram
+  autonumber
+  actor U as User
+  participant C as React client
+  participant A as Express API
+  participant D as PostgreSQL
+  U->>C: Add or edit category / supplier / customer
+  C->>A: POST or PUT (name, details, supplier product links)
+  A->>A: Check permission, name required
+  A->>D: INSERT / UPDATE (unique name per account)
+  alt Name already used
+    A-->>C: 409 already exists
+  else Saved
+    A->>D: Activity log
+    A-->>C: 201 / 200
+  end
+  U->>C: Delete
+  C->>A: DELETE …/:id
+  A->>D: Count products / links / sales orders using it
+  alt Still in use
+    A-->>C: 409 in use by N
+  else Free
+    A->>D: DELETE and activity log
+    A-->>C: 204
+  end

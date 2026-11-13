@@ -1,0 +1,22 @@
+flowchart TD
+  S(( )):::start --> Load["Dashboard loads the account's products"]
+  Load --> Each["For each product"]
+  Each --> Zero{"Stock = 0?"}
+  Zero -- Yes --> Out["Out of stock"]:::error
+  Zero -- No --> Low{"Stock ≤ threshold?"}
+  Low -- Yes --> LowS["Low stock"]
+  Low -- No --> Healthy["In stock"]:::ok
+  Out --> Exp
+  LowS --> Exp
+  Healthy --> Exp{"Expiry date within 30 days<br/>or already past?"}
+  Exp -- Yes --> Expiring["Expired / expiring"]
+  Exp -- No --> Next
+  Expiring --> Next{"More products?"}
+  Next -- Yes --> Each
+  Next -- No --> Count["Badge = low + out + expiring;<br/>notifications list each alert"]
+  Count --> Show["Show cards, Inventory badge, bell,<br/>Inventory tiles and filters"]:::ok
+  Show --> E((( ))):::stop
+  classDef start fill:#153A33,stroke:#153A33
+  classDef stop fill:#153A33,stroke:#153A33
+  classDef error fill:#FBE3E8,stroke:#A03B4F,color:#5A1E2A
+  classDef ok fill:#DDF0C8,stroke:#3F6B55
